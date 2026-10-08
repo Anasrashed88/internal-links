@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مُولّد الروابط الداخلية الجماعي (Bulk SEO Linker)</title>
-    <!-- Tailwind CSS لتنسيق الواجهة -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- مكتبة JSZip لضغط الملفات وتحميلها -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
@@ -22,14 +20,15 @@
                 <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك تلقائياً.</span>
             </div>
 
-            <!-- 2. اختيار الموديل -->
+            <!-- 2. اختيار الموديل القوي -->
             <div>
-                <label class="block text-sm font-semibold mb-1">🤖 اختيار الموديل:</label>
-                <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-sm">
-                    <option value="auto">تلقائي (اختيار أحدث موديل Flash متاح)</option>
-                    <option value="models/gemini-3.5-flash">Gemini 3.5 Flash (سريع ومثالي للكميات)</option>
-                    <option value="models/gemini-3.5-flash">Gemini 3.5 Pro (أعلى دقة)</option>
+                <label class="block text-sm font-semibold mb-1">🤖 اختيار الموديل (Model):</label>
+                <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-sm font-mono">
+                    <option value="models/gemini-3.8-pro" selected>🔥 Gemini 3.8 Pro (المودل الأقوى والأعلى دقة للـ SEO)</option>
+                    <option value="models/gemini-3.8-flash">⚡ Gemini 3.8 Flash (سريع وموصى به من Google)</option>
+                    <option value="custom">✍️ كتابة موديل آخر يدوياً...</option>
                 </select>
+                <input type="text" id="customModelInput" placeholder="اكتب اسم المودل هنا مثل: models/gemini-3.8-pro" class="w-full border p-2 rounded mt-2 text-sm font-mono hidden">
             </div>
 
             <!-- 3. روابط الخرائط -->
@@ -45,7 +44,6 @@
                 <span id="fileCount" class="text-xs text-gray-500 mt-1 block">لم يتم اختيار أي ملفات بعد.</span>
             </div>
 
-            <!-- زر التشغيل -->
             <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
                 🚀 ابدأ معالجة جميع المقالات
             </button>
@@ -63,7 +61,7 @@
             <div id="logMessage" class="mt-2 text-xs text-gray-600"></div>
         </div>
 
-        <!-- صندوق التنزيل بعد الانتهاء -->
+        <!-- صندوق التنزيل -->
         <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
             <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء من معالجة جميع المقالات بنجاح!</h3>
             <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
@@ -81,6 +79,16 @@
 
             const savedSitemaps = localStorage.getItem('saved_sitemaps');
             if (savedSitemaps) document.getElementById('sitemapUrls').value = savedSitemaps;
+        });
+
+        document.getElementById('modelSelect').addEventListener('change', (e) => {
+            const customInput = document.getElementById('customModelInput');
+            if (e.target.value === 'custom') {
+                customInput.classList.remove('hidden');
+                customInput.focus();
+            } else {
+                customInput.classList.add('hidden');
+            }
         });
 
         document.getElementById('articleFiles').addEventListener('change', (e) => {
@@ -132,23 +140,9 @@
             return urls;
         }
 
-        async function getBestAvailableModel(apiKey) {
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.models && data.models.length > 0) {
-                        const flash = data.models.find(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("flash"));
-                        if (flash) return flash.name;
-                    }
-                }
-            } catch (e) {}
-            return "models/gemini-2.5-flash";
-        }
-
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        async function processSingleArticle(apiKey, modelEndpoint, articleText, urls) {
+        async function processSingleArticle(modelEndpoint, articleText, urls) {
             const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (SEO Internal Linking Specialist).
 
 المهمة:
@@ -201,17 +195,26 @@ ${articleText}`;
             localStorage.setItem('gemini_api_key', apiKey);
             localStorage.setItem('saved_sitemaps', sitemapUrlsInput);
 
+            // تحديد الموديل المختار
+            let selectedModel = document.getElementById('modelSelect').value;
+            if (selectedModel === 'custom') {
+                selectedModel = document.getElementById('customModelInput').value.trim();
+                if (!selectedModel) return alert("يرجى إدخال اسم الموديل المخصص.");
+            }
+            if (!selectedModel.startsWith('models/')) {
+                selectedModel = 'models/' + selectedModel;
+            }
+
             submitBtn.disabled = true;
             statusContainer.classList.remove('hidden');
             downloadContainer.classList.add('hidden');
             
             progressBar.style.width = '0%';
             progressPercent.innerText = '0%';
-            statusText.innerText = "⏳ جاري استخراج صفحات المتجر من الـ Sitemap...";
+            statusText.innerText = "⏳ جاري استخراج روابط المتجر من الـ Sitemap...";
             logMessage.innerText = "";
 
             try {
-                // 1. جلب روابط المتجر
                 const sitemapList = sitemapUrlsInput.split('\n').map(s => s.trim()).filter(s => s.startsWith('http'));
                 let allUrls = [];
                 for (let sitemap of sitemapList) {
@@ -223,13 +226,8 @@ ${articleText}`;
                 if (allUrls.length === 0) throw new Error("تعذر سحب أي روابط من خريطة الموقع.");
 
                 const selectedUrls = allUrls.slice(0, 80);
+                const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
 
-                // 2. تحديد الموديل
-                const selectedModel = document.getElementById('modelSelect').value;
-                const activeModel = selectedModel === "auto" ? await getBestAvailableModel(apiKey) : selectedModel;
-                const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${apiKey}`;
-
-                // 3. معالجة الملفات في لوب
                 const zip = new JSZip();
                 const totalFiles = files.length;
 
@@ -238,22 +236,17 @@ ${articleText}`;
                     const currentNum = i + 1;
                     
                     statusText.innerText = `⏳ معالجة المقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `جاري حقن الروابط بواسطة الذكاء الاصطناعي...`;
+                    logMessage.innerText = `جاري الحقن عبر ${selectedModel.replace('models/', '')}...`;
 
                     const originalText = await file.text();
+                    const updatedContent = await processSingleArticle(geminiEndpoint, originalText, selectedUrls);
                     
-                    // حقن الروابط
-                    const updatedContent = await processSingleArticle(apiKey, geminiEndpoint, originalText, selectedUrls);
-                    
-                    // إضافة الملف المعالج إلى الـ ZIP بنفس اسمه
                     zip.file(file.name, updatedContent);
 
-                    // تحديث شريط التقدم
                     const pct = Math.round((currentNum / totalFiles) * 100);
                     progressBar.style.width = `${pct}%`;
                     progressPercent.innerText = `${pct}%`;
 
-                    // انتظار ثانية ونصف بين كل مقال لتجنب تجاوز حد الطلبات في الثانية (Rate Limit)
                     if (i < totalFiles - 1) await sleep(1500);
                 }
 
