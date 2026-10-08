@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أداة توليد الروابط الداخلية (SEO)</title>
-    <!-- Tailwind CSS لتصميم واجهة نظيفة -->
+    <title>أداة توليد الروابط الداخلية (SEO - Gemini)</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-6">
     <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">🔗 مُوَلّد الروابط الداخلية لمحركات البحث</h1>
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">🔗 مُوَلّد الروابط الداخلية لمحركات البحث (Gemini AI)</h1>
 
         <div class="space-y-4">
             <div>
-                <label class="block text-sm font-semibold mb-1">مفتاح OpenAI API Key:</label>
-                <input type="password" id="apiKey" placeholder="sk-..." class="w-full border p-2 rounded focus:outline-blue-500">
+                <label class="block text-sm font-semibold mb-1">مفتاح Google AI Studio API Key:</label>
+                <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500">
+                <span class="text-xs text-gray-500">يُحفظ تلقائياً في متصفحك ولن تحتاج لكتابته كل مرة.</span>
             </div>
 
             <div>
@@ -28,7 +28,7 @@
             </div>
 
             <button onclick="processInternalLinks()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 معالجة وتوليد الروابط
+                🚀 معالجة وتوليد الروابط بواسطة Gemini
             </button>
         </div>
 
@@ -36,13 +36,25 @@
 
         <div id="resultContainer" class="mt-6 hidden">
             <h2 class="text-lg font-bold mb-2">النتيجة (جاهزة للنسخ):</h2>
-            <textarea id="resultText" rows="8" class="w-full border p-3 rounded bg-gray-50 focus:outline-none" readonly></textarea>
+            <textarea id="resultText" rows="8" class="w-full border p-3 rounded bg-gray-50 focus:outline-none font-mono text-sm" readonly></textarea>
         </div>
     </div>
 
     <script>
+  
+        // استرجاع المفتاح المحفوظ في جهازك عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            if (HARDCODED_API_KEY.trim() !== "") {
+                document.getElementById('apiKey').value = HARDCODED_API_KEY;
+            } else {
+                const savedKey = localStorage.getItem('gemini_api_key');
+                if (savedKey) {
+                    document.getElementById('apiKey').value = savedKey;
+                }
+            }
+        });
+
         async function fetchSitemap(storeUrl) {
-            // استخدام وكيل مجاني لتجاوز حظر المتصفح لسياسة الـ CORS عند جلب الروابط
             const proxyUrl = "https://api.allorigins.win/raw?url=";
             const sitemapUrl = storeUrl.replace(/\/$/, "") + "/sitemap.xml";
             
@@ -57,18 +69,18 @@
             let urls = [];
             for (let i = 0; i < locs.length; i++) {
                 let u = locs[i].textContent.trim();
-                // فلترة مبدئية لصفحات المنتجات والتصنيفات
                 if (u.includes('/product') || u.includes('/category') || u.includes('/collection') || u.includes('/p/')) {
                     urls.push(u);
-                } else if (urls.length < 50) {
+                } else if (urls.length < 80) {
                     urls.push(u);
                 }
             }
-            return urls.slice(0, 40); // إرسال عينة من 40 رابط كحد أقصى
+            return urls.slice(0, 80);
         }
 
         async function processInternalLinks() {
-            const apiKey = document.getElementById('apiKey').value.trim();
+            const apiKeyInput = document.getElementById('apiKey').value.trim();
+            const apiKey = HARDCODED_API_KEY.trim() !== "" ? HARDCODED_API_KEY : apiKeyInput;
             const storeUrl = document.getElementById('storeUrl').value.trim();
             const articleText = document.getElementById('articleText').value.trim();
             const status = document.getElementById('status');
@@ -81,58 +93,73 @@
                 return;
             }
 
+            // حفظ المفتاح في متصفحك تلقائياً لكي لا تضطر لكتابته مجدداً
+            localStorage.setItem('gemini_api_key', apiKey);
+
             status.classList.remove('hidden', 'text-red-600', 'text-green-600');
             status.classList.add('text-blue-600');
-            status.innerText = "⏳ جاري فحص روابط المتجر وتحليل المقال...";
+            status.innerText = "⏳ جاري فحص خريطة المتجر وجلب الصفحات...";
             submitBtn.disabled = true;
 
             try {
-                // 1. جلب الروابط من المتجر
+                // 1. جلب الروابط
                 const urls = await fetchSitemap(storeUrl);
-                if (urls.length === 0) throw new Error("لم نتمكن من استخراج روابط كافية من المتجر.");
+                if (urls.length === 0) throw new Error("لم نتمكن من العثور على روابط كافية في خريطة الموقع.");
 
-                // 2. إرسال الطلب لـ OpenAI
-                status.innerText = "🧠 جاري اختيار الروابط وإدراجها سياقياً بواسطة الذكاء الاصطناعي...";
+                // 2. التحليل بواسطة Gemini
+                status.innerText = "🧠 جاري تحليل المقال واختيار الروابط بواسطة Gemini...";
 
-                const prompt = `أنت خبير محترف في تحسين محركات البحث (SEO).
+                const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (Internal SEO Specialist).
+
 المهمة:
-- لديك قائمة بروابط لمتجر إلكتروني.
-- ولديك نص مقال.
-- اختر أفضل روابط ذات صلة (بحد أقصى 3 روابط فقط).
-- أدرجها طبيعياً في سياق المقال بصيغة Markdown على شكل [الكلمة المفتاحية](الرابط).
-- تجنب كلمات عامة مثل "انقر هنا". يجب أن يكون الـ Anchor Text متعلقاً بالصفحة المستهدفة.
-- أرجع المقال كاملاً بعد دمج الروابط بدون شروحات أو مقدمات.
+- أمامك قائمة بروابط صفحات وتصنيفات المتجر.
+- وأمامك نص مقالة.
+- اختر أنسب الروابط (بحد أقصى 3 روابط فقط) التي تتطابق تماماً مع سياق المقال.
+- أدرج الروابط داخل النص بشكل Markdown طبيعي مثل: [الكلمة المفتاحية](الرابط).
+- شروط SEO: اجعل الكلمة المفتاحية (Anchor text) طبيعية وضمن السياق، تجنب كلمات مثل "اضغط هنا" أو "هذا الرابط".
+- لا تضع الروابط في مكان واحد، وزعها على سياق المقال.
+- أرجع المقال كاملاً بعد دمج الروابط بدون إضافة أي ملاحظات أو مقدمات من قبلك.
 
-قائمة الروابط:
+قائمة روابط المتجر:
 ${urls.join('\n')}
 
-المقال:
+نص المقالة:
 ${articleText}`;
 
-                const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(geminiUrl, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        model: "gpt-4o-mini",
-                        messages: [{ role: "user", content: prompt }],
-                        temperature: 0.3
+                        contents: [
+                            {
+                                parts: [{ text: prompt }]
+                            }
+                        ],
+                        generationConfig: {
+                            temperature: 0.3
+                        }
                     })
                 });
 
-                const aiData = await aiRes.json();
-                if (aiData.error) throw new Error(aiData.error.message);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
 
-                resultText.value = aiData.choices[0].message.content;
+                const output = data.candidates[0].content.parts[0].text;
+                resultText.value = output;
                 resultContainer.classList.remove('hidden');
                 status.classList.replace('text-blue-600', 'text-green-600');
-                status.innerText = "✅ تم توليد الروابط بنجاح!";
+                status.innerText = "✅ تم دمج الروابط بنجاح!";
 
             } catch (err) {
                 status.classList.replace('text-blue-600', 'text-red-600');
-                status.innerText = "❌ خطأ: " + err.message;
+                status.innerText = "❌ حدث خطأ: " + err.message;
             } finally {
                 submitBtn.disabled = false;
             }
