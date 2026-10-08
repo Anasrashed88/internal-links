@@ -6,15 +6,15 @@
     <title>أداة توليد الروابط الداخلية (SEO - Gemini)</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 p-6">
-    <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+    <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
         <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">🔗 مُوَلّد الروابط الداخلية لمحركات البحث (Gemini AI)</h1>
 
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-semibold mb-1">مفتاح Google AI Studio API Key:</label>
-                <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500">
-                <span class="text-xs text-gray-500">يُحفظ تلقائياً في متصفحك ولن تحتاج لكتابته كل مرة.</span>
+                <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
+                <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك الشخصي فقط.</span>
             </div>
 
             <div>
@@ -22,46 +22,77 @@
                 <input type="url" id="storeUrl" placeholder="https://example.com" class="w-full border p-2 rounded focus:outline-blue-500">
             </div>
 
+            <!-- خيار اختياري في حال فشل جلب خريطة المتجر تلقائياً -->
+            <details class="text-sm border border-dashed p-3 rounded bg-gray-50">
+                <summary class="cursor-pointer text-blue-600 font-semibold">⚙️ خيار بديل: إدخال روابط المتجر يدوياً (اختياري)</summary>
+                <p class="text-xs text-gray-500 mt-1 mb-2">إذا كان المتجر محجوباً أو لم يستجب الـ Sitemap، الصق عينة من روابط المنتجات/الأقسام هنا (كل رابط في سطر):</p>
+                <textarea id="manualUrls" rows="3" placeholder="https://example.com/product-1&#10;https://example.com/category-2" class="w-full border p-2 rounded text-xs"></textarea>
+            </details>
+
             <div>
                 <label class="block text-sm font-semibold mb-1">نص المقالة:</label>
                 <textarea id="articleText" rows="6" placeholder="الصق نص المقالة هنا..." class="w-full border p-2 rounded focus:outline-blue-500"></textarea>
             </div>
 
             <button onclick="processInternalLinks()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 معالجة وتوليد الروابط بواسطة Gemini
+                🚀 معالجة وتوليد الروابط
             </button>
         </div>
 
-        <div id="status" class="mt-4 text-center font-medium hidden"></div>
+        <div id="status" class="mt-4 p-3 rounded-lg text-center font-medium hidden"></div>
 
         <div id="resultContainer" class="mt-6 hidden">
-            <h2 class="text-lg font-bold mb-2">النتيجة (جاهزة للنسخ):</h2>
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-bold">النتيجة:</h2>
+                <button onclick="copyResult()" class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">📋 نسخ النص</button>
+            </div>
             <textarea id="resultText" rows="8" class="w-full border p-3 rounded bg-gray-50 focus:outline-none font-mono text-sm" readonly></textarea>
         </div>
     </div>
 
     <script>
-  
-        // استرجاع المفتاح المحفوظ في جهازك عند فتح الصفحة
+        const HARDCODED_API_KEY = "";
+
         window.addEventListener('DOMContentLoaded', () => {
-            if (HARDCODED_API_KEY.trim() !== "") {
-                document.getElementById('apiKey').value = HARDCODED_API_KEY;
-            } else {
-                const savedKey = localStorage.getItem('gemini_api_key');
-                if (savedKey) {
-                    document.getElementById('apiKey').value = savedKey;
-                }
-            }
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) document.getElementById('apiKey').value = savedKey;
         });
 
+        async function fetchWithFallback(url) {
+            // تجربة أكثر من بروكسي في حال تعطل أحدها
+            const proxies = [
+                (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
+            ];
+
+            for (let proxy of proxies) {
+                try {
+                    const res = await fetch(proxy(url));
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text && text.includes('<')) return text;
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+            throw new Error("تعذر الوصول لخريطة المتجر (قد يكون المتجر محمياً بـ Cloudflare). يمكنك استخدام خيار 'إدخال الروابط يدوياً'.");
+        }
+
         async function fetchSitemap(storeUrl) {
-            const proxyUrl = "https://api.allorigins.win/raw?url=";
-            const sitemapUrl = storeUrl.replace(/\/$/, "") + "/sitemap.xml";
+            const cleanUrl = storeUrl.replace(/\/$/, "");
+            const sitemapPaths = ["/sitemap.xml", "/sitemap_products_1.xml"];
             
-            const response = await fetch(proxyUrl + encodeURIComponent(sitemapUrl));
-            if (!response.ok) throw new Error("تعذر جلب ملف الـ Sitemap للمتجر.");
-            
-            const xmlText = await response.text();
+            let xmlText = null;
+            for (let path of sitemapPaths) {
+                try {
+                    xmlText = await fetchWithFallback(cleanUrl + path);
+                    if (xmlText) break;
+                } catch (e) {}
+            }
+
+            if (!xmlText) throw new Error("لم نتمكن من قراءة sitemap.xml للمتجر. يرجى تجربة خيار إضافة الروابط يدوياً بالأسفل.");
+
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
             const locs = xmlDoc.getElementsByTagName("loc");
@@ -69,45 +100,56 @@
             let urls = [];
             for (let i = 0; i < locs.length; i++) {
                 let u = locs[i].textContent.trim();
-                if (u.includes('/product') || u.includes('/category') || u.includes('/collection') || u.includes('/p/')) {
-                    urls.push(u);
-                } else if (urls.length < 80) {
+                // استبعاد روابط الـ sitemap الفرعية
+                if (!u.endsWith('.xml')) {
                     urls.push(u);
                 }
             }
-            return urls.slice(0, 80);
+            return urls.slice(0, 50);
         }
 
         async function processInternalLinks() {
             const apiKeyInput = document.getElementById('apiKey').value.trim();
             const apiKey = HARDCODED_API_KEY.trim() !== "" ? HARDCODED_API_KEY : apiKeyInput;
             const storeUrl = document.getElementById('storeUrl').value.trim();
+            const manualUrlsInput = document.getElementById('manualUrls').value.trim();
             const articleText = document.getElementById('articleText').value.trim();
+            
             const status = document.getElementById('status');
             const resultContainer = document.getElementById('resultContainer');
             const resultText = document.getElementById('resultText');
             const submitBtn = document.getElementById('submitBtn');
 
-            if (!apiKey || !storeUrl || !articleText) {
-                alert("يرجى ملء جميع الحقول أولاً!");
+            if (!apiKey) {
+                showStatus("يرجى إدخال مفتاح Gemini API Key أولاً.", "red");
+                return;
+            }
+            if (!storeUrl && !manualUrlsInput) {
+                showStatus("يرجى إدخال رابط المتجر أو وضع روابط يدوية.", "red");
+                return;
+            }
+            if (!articleText) {
+                showStatus("يرجى إدخال نص المقالة.", "red");
                 return;
             }
 
-            // حفظ المفتاح في متصفحك تلقائياً لكي لا تضطر لكتابته مجدداً
             localStorage.setItem('gemini_api_key', apiKey);
-
-            status.classList.remove('hidden', 'text-red-600', 'text-green-600');
-            status.classList.add('text-blue-600');
-            status.innerText = "⏳ جاري فحص خريطة المتجر وجلب الصفحات...";
+            showStatus("⏳ جاري فحص الروابط والمقالة...", "blue");
             submitBtn.disabled = true;
 
             try {
-                // 1. جلب الروابط
-                const urls = await fetchSitemap(storeUrl);
-                if (urls.length === 0) throw new Error("لم نتمكن من العثور على روابط كافية في خريطة الموقع.");
+                let urls = [];
+                if (manualUrlsInput) {
+                    urls = manualUrlsInput.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+                } else {
+                    urls = await fetchSitemap(storeUrl);
+                }
 
-                // 2. التحليل بواسطة Gemini
-                status.innerText = "🧠 جاري تحليل المقال واختيار الروابط بواسطة Gemini...";
+                if (urls.length === 0) {
+                    throw new Error("لم يتم العثور على أي روابط صالحة للمتجر.");
+                }
+
+                showStatus(`🧠 تم العثور على ${urls.length} رابط. جاري المعالجة بذكاء Gemini...`, "blue");
 
                 const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (Internal SEO Specialist).
 
@@ -117,52 +159,61 @@
 - اختر أنسب الروابط (بحد أقصى 3 روابط فقط) التي تتطابق تماماً مع سياق المقال.
 - أدرج الروابط داخل النص بشكل Markdown طبيعي مثل: [الكلمة المفتاحية](الرابط).
 - شروط SEO: اجعل الكلمة المفتاحية (Anchor text) طبيعية وضمن السياق، تجنب كلمات مثل "اضغط هنا" أو "هذا الرابط".
-- لا تضع الروابط في مكان واحد، وزعها على سياق المقال.
+- وزع الروابط بسلاسة على سياق المقال.
 - أرجع المقال كاملاً بعد دمج الروابط بدون إضافة أي ملاحظات أو مقدمات من قبلك.
 
-قائمة روابط المتجر:
+قائمة الروابط:
 ${urls.join('\n')}
 
-نص المقالة:
+المقال:
 ${articleText}`;
 
                 const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(geminiUrl, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        contents: [
-                            {
-                                parts: [{ text: prompt }]
-                            }
-                        ],
-                        generationConfig: {
-                            temperature: 0.3
-                        }
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.3 }
                     })
                 });
 
                 const data = await response.json();
                 
                 if (data.error) {
-                    throw new Error(data.error.message);
+                    throw new Error(`خطأ من Google: ${data.error.message}`);
                 }
 
-                const output = data.candidates[0].content.parts[0].text;
-                resultText.value = output;
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("لم يتمكن النموذج من إنتاج رد. تأكد من صحة المفتاح.");
+                }
+
+                resultText.value = data.candidates[0].content.parts[0].text;
                 resultContainer.classList.remove('hidden');
-                status.classList.replace('text-blue-600', 'text-green-600');
-                status.innerText = "✅ تم دمج الروابط بنجاح!";
+                showStatus("✅ تم دمج الروابط بنجاح!", "green");
 
             } catch (err) {
-                status.classList.replace('text-blue-600', 'text-red-600');
-                status.innerText = "❌ حدث خطأ: " + err.message;
+                showStatus("❌ " + err.message, "red");
             } finally {
                 submitBtn.disabled = false;
             }
+        }
+
+        function showStatus(text, color) {
+            const status = document.getElementById('status');
+            status.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700', 'bg-green-100', 'text-green-700');
+            if (color === "red") status.classList.add('bg-red-100', 'text-red-700');
+            else if (color === "green") status.classList.add('bg-green-100', 'text-green-700');
+            else status.classList.add('bg-blue-100', 'text-blue-700');
+            status.innerText = text;
+        }
+
+        function copyResult() {
+            const text = document.getElementById('resultText');
+            text.select();
+            navigator.clipboard.writeText(text.value);
+            alert("تم نسخ المقال بنجاح!");
         }
     </script>
 </body>
