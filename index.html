@@ -18,9 +18,8 @@
             </div>
 
             <div>
-                <label class="block text-sm font-semibold mb-1">🗺️ روابط خرائط الموقع (Sitemaps) - <span class="text-blue-600 font-normal">رابط واحد على الأقل</span>:</label>
-                <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة المنتجات أو التصنيفات هنا (رابط بكل سطر):&#10;https://example.com/sitemap_products_1.xml&#10;https://example.com/category-sitemap.xml" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
-                <span class="text-xs text-gray-500">💡 يمكنك وضع خريطة المنتجات أو الأقسام مباشرة من متجرك (سلة، زد، ووردبريس، شوبيفاي).</span>
+                <label class="block text-sm font-semibold mb-1">🗺️ روابط خرائط الموقع (Sitemaps):</label>
+                <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة المنتجات أو الأقسام هنا:&#10;https://example.com/sitemap_products_1.xml" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
             </div>
 
             <div>
@@ -55,7 +54,6 @@
             if (savedSitemaps) document.getElementById('sitemapUrls').value = savedSitemaps;
         });
 
-        // جلب محتوى الرابط وتجاوز مشاكل CORS بعدة محاولات
         async function fetchXmlWithProxy(url) {
             const proxies = [
                 (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
@@ -77,7 +75,6 @@
             return null;
         }
 
-        // استخراج الروابط من ملف الـ XML (ويدعم الخرائط المتفرعة تلقائياً)
         async function extractUrlsFromSitemap(sitemapUrl) {
             const xmlText = await fetchXmlWithProxy(sitemapUrl);
             if (!xmlText) return [];
@@ -91,7 +88,6 @@
 
             for (let i = 0; i < locElements.length; i++) {
                 let link = locElements[i].textContent.trim();
-                // إذا كانت الخريطة تحتوي على روابط خرائط فرعية أخرى (.xml)
                 if (link.endsWith('.xml')) {
                     subSitemaps.push(link);
                 } else {
@@ -99,13 +95,43 @@
                 }
             }
 
-            // إذا كانت خريطة رئيسية (تحتوي فقط على .xml فرعية)، نقرأ أول خريطة فرعية للمنتجات
             if (urls.length === 0 && subSitemaps.length > 0) {
                 const targetSub = subSitemaps.find(s => s.includes('product') || s.includes('category')) || subSitemaps[0];
                 return await extractUrlsFromSitemap(targetSub);
             }
 
             return urls;
+        }
+
+        // دالة لاكتشاف أحدث نموذج متاح تلقائياً لحسابك
+        async function getBestAvailableModel(apiKey) {
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.models && data.models.length > 0) {
+                        // البحث عن نموذج flash فعال
+                        const flashModel = data.models.find(m => 
+                            m.supportedGenerationMethods && 
+                            m.supportedGenerationMethods.includes("generateContent") && 
+                            m.name.includes("flash")
+                        );
+                        if (flashModel) return flashModel.name;
+
+                        // أو أي نموذج gemini فعال
+                        const anyGemini = data.models.find(m => 
+                            m.supportedGenerationMethods && 
+                            m.supportedGenerationMethods.includes("generateContent") && 
+                            m.name.includes("gemini")
+                        );
+                        if (anyGemini) return anyGemini.name;
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not list models, falling back to default.", e);
+            }
+            // اختيار افتراضي حديث في حال تعذر جلب القائمة
+            return "models/gemini-2.5-flash";
         }
 
         async function processInternalLinks() {
@@ -134,7 +160,7 @@
             localStorage.setItem('gemini_api_key', apiKey);
             localStorage.setItem('saved_sitemaps', sitemapUrlsInput);
 
-            showStatus("⏳ جاري قراءة خريطة الموقع واستخراج الروابط...", "blue");
+            showStatus("⏳ جاري استخراج الروابط من خريطة الموقع...", "blue");
             submitBtn.disabled = true;
 
             try {
@@ -150,17 +176,18 @@
                     allUrls = allUrls.concat(fetchedUrls);
                 }
 
-                // إزالة التكرار
                 allUrls = [...new Set(allUrls)];
 
                 if (allUrls.length === 0) {
                     throw new Error("تعذر سحب أي روابط من خريطة الموقع المُدخلة. تأكد من صحة الرابط.");
                 }
 
-                // أخذ عينة تصل إلى 70 رابط لإرسالها للذكاء الاصطناعي
                 const selectedUrls = allUrls.slice(0, 70);
 
-                showStatus(`🧠 تم العثور على (${allUrls.length}) صفحة بنجاح! جاري دمج أنسب 3 روابط عبر Gemini...`, "blue");
+                showStatus("🔍 جاري فحص أحدث نموذج ذكاء اصطناعي متاح في حسابك...", "blue");
+                const activeModel = await getBestAvailableModel(apiKey);
+
+                showStatus(`🧠 تم ربط (${allUrls.length}) صفحة بنجاح! جاري الدمج عبر ${activeModel.replace('models/', '')}...`, "blue");
 
                 const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (Internal SEO Specialist).
 
@@ -180,7 +207,7 @@ ${selectedUrls.join('\n')}
 المقال:
 ${articleText}`;
 
-                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${apiKey}`;
 
                 const response = await fetch(geminiUrl, {
                     method: "POST",
@@ -199,7 +226,7 @@ ${articleText}`;
 
                 resultText.value = data.candidates[0].content.parts[0].text;
                 resultContainer.classList.remove('hidden');
-                showStatus(`✅ تم دمج الروابط بنجاح من بين ${allUrls.length} صفحة متوفرة!`, "green");
+                showStatus(`✅ تم دمج الروابط بنجاح!`, "green");
 
             } catch (err) {
                 showStatus("❌ " + err.message, "red");
