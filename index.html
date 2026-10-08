@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة توليد الروابط الداخلية (SEO)</title>
+    <!-- Tailwind CSS لتصميم واجهة نظيفة -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6">
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">🔗 مُوَلّد الروابط الداخلية لمحركات البحث</h1>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold mb-1">مفتاح OpenAI API Key:</label>
+                <input type="password" id="apiKey" placeholder="sk-..." class="w-full border p-2 rounded focus:outline-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">رابط المتجر (Store URL):</label>
+                <input type="url" id="storeUrl" placeholder="https://example.com" class="w-full border p-2 rounded focus:outline-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">نص المقالة:</label>
+                <textarea id="articleText" rows="6" placeholder="الصق نص المقالة هنا..." class="w-full border p-2 rounded focus:outline-blue-500"></textarea>
+            </div>
+
+            <button onclick="processInternalLinks()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+                🚀 معالجة وتوليد الروابط
+            </button>
+        </div>
+
+        <div id="status" class="mt-4 text-center font-medium hidden"></div>
+
+        <div id="resultContainer" class="mt-6 hidden">
+            <h2 class="text-lg font-bold mb-2">النتيجة (جاهزة للنسخ):</h2>
+            <textarea id="resultText" rows="8" class="w-full border p-3 rounded bg-gray-50 focus:outline-none" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        async function fetchSitemap(storeUrl) {
+            // استخدام وكيل مجاني لتجاوز حظر المتصفح لسياسة الـ CORS عند جلب الروابط
+            const proxyUrl = "https://api.allorigins.win/raw?url=";
+            const sitemapUrl = storeUrl.replace(/\/$/, "") + "/sitemap.xml";
+            
+            const response = await fetch(proxyUrl + encodeURIComponent(sitemapUrl));
+            if (!response.ok) throw new Error("تعذر جلب ملف الـ Sitemap للمتجر.");
+            
+            const xmlText = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            const locs = xmlDoc.getElementsByTagName("loc");
+            
+            let urls = [];
+            for (let i = 0; i < locs.length; i++) {
+                let u = locs[i].textContent.trim();
+                // فلترة مبدئية لصفحات المنتجات والتصنيفات
+                if (u.includes('/product') || u.includes('/category') || u.includes('/collection') || u.includes('/p/')) {
+                    urls.push(u);
+                } else if (urls.length < 50) {
+                    urls.push(u);
+                }
+            }
+            return urls.slice(0, 40); // إرسال عينة من 40 رابط كحد أقصى
+        }
+
+        async function processInternalLinks() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const storeUrl = document.getElementById('storeUrl').value.trim();
+            const articleText = document.getElementById('articleText').value.trim();
+            const status = document.getElementById('status');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultText = document.getElementById('resultText');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (!apiKey || !storeUrl || !articleText) {
+                alert("يرجى ملء جميع الحقول أولاً!");
+                return;
+            }
+
+            status.classList.remove('hidden', 'text-red-600', 'text-green-600');
+            status.classList.add('text-blue-600');
+            status.innerText = "⏳ جاري فحص روابط المتجر وتحليل المقال...";
+            submitBtn.disabled = true;
+
+            try {
+                // 1. جلب الروابط من المتجر
+                const urls = await fetchSitemap(storeUrl);
+                if (urls.length === 0) throw new Error("لم نتمكن من استخراج روابط كافية من المتجر.");
+
+                // 2. إرسال الطلب لـ OpenAI
+                status.innerText = "🧠 جاري اختيار الروابط وإدراجها سياقياً بواسطة الذكاء الاصطناعي...";
+
+                const prompt = `أنت خبير محترف في تحسين محركات البحث (SEO).
+المهمة:
+- لديك قائمة بروابط لمتجر إلكتروني.
+- ولديك نص مقال.
+- اختر أفضل روابط ذات صلة (بحد أقصى 3 روابط فقط).
+- أدرجها طبيعياً في سياق المقال بصيغة Markdown على شكل [الكلمة المفتاحية](الرابط).
+- تجنب كلمات عامة مثل "انقر هنا". يجب أن يكون الـ Anchor Text متعلقاً بالصفحة المستهدفة.
+- أرجع المقال كاملاً بعد دمج الروابط بدون شروحات أو مقدمات.
+
+قائمة الروابط:
+${urls.join('\n')}
+
+المقال:
+${articleText}`;
+
+                const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini",
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.3
+                    })
+                });
+
+                const aiData = await aiRes.json();
+                if (aiData.error) throw new Error(aiData.error.message);
+
+                resultText.value = aiData.choices[0].message.content;
+                resultContainer.classList.remove('hidden');
+                status.classList.replace('text-blue-600', 'text-green-600');
+                status.innerText = "✅ تم توليد الروابط بنجاح!";
+
+            } catch (err) {
+                status.classList.replace('text-blue-600', 'text-red-600');
+                status.innerText = "❌ خطأ: " + err.message;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
