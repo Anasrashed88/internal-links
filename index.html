@@ -9,27 +9,23 @@
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">📦 مُعالج المقالات الجماعي وحقن الروابط (SEO)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">يعمل بواسطة: <span class="font-bold text-blue-600">Gemini 3.1 Flash Lite</span> ⚡</p>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">📦 مُعالج المقالات وحقن الروابط السياقية (SEO)</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">حقن دقيق بدون تعديل أو اختراع أي نص إضافي ⚡</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
             <div>
                 <label class="block text-sm font-semibold mb-1">مفتاح Google AI Studio API Key:</label>
-                <div class="flex gap-2">
-                    <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
-                    <button onclick="loadUserModels()" class="bg-gray-800 hover:bg-black text-white px-3 py-2 rounded text-xs whitespace-nowrap">🔄 فحص النماذج</button>
-                </div>
+                <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
                 <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك تلقائياً.</span>
             </div>
 
-            <!-- 2. اختيار الموديل (مضبوط على Gemini 3.1 Flash Lite) -->
+            <!-- 2. الموديل الافتراضي الثابت -->
             <div>
-                <label class="block text-sm font-semibold mb-1">🤖 الموديل المستخدم:</label>
-                <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-sm font-mono">
+                <label class="block text-sm font-semibold mb-1">🤖 الموديل المستخدم (الافتراضي):</label>
+                <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-gray-50 text-sm font-mono" disabled>
                     <option value="models/gemini-3.1-flash-lite" selected>⚡ models/gemini-3.1-flash-lite (افتراضي)</option>
                 </select>
-                <span id="modelStatus" class="text-xs text-blue-600 mt-1 block"></span>
             </div>
 
             <!-- 3. روابط الخرائط -->
@@ -46,11 +42,11 @@
             </div>
 
             <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 ابدأ معالجة جميع المقالات
+                🚀 ابدأ حقن الروابط بدقة 100%
             </button>
         </div>
 
-        <!-- صندوق حالة التقدم -->
+        <!-- شريط التقدم -->
         <div id="statusContainer" class="mt-6 hidden">
             <div class="flex justify-between text-sm font-semibold mb-1">
                 <span id="statusText">جاري المعالجة...</span>
@@ -64,9 +60,9 @@
 
         <!-- صندوق التنزيل -->
         <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
-            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء من معالجة جميع المقالات بنجاح!</h3>
+            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء من معالجة جميع المقالات دون أي زيادة على النصوص!</h3>
             <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
-                📥 تحميل كل المقالات في ملف ZIP
+                📥 تحميل المقالات المحقونة (ZIP)
             </button>
         </div>
     </div>
@@ -76,55 +72,11 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('gemini_api_key');
-            if (savedKey) {
-                document.getElementById('apiKey').value = savedKey;
-                loadUserModels();
-            }
+            if (savedKey) document.getElementById('apiKey').value = savedKey;
 
             const savedSitemaps = localStorage.getItem('saved_sitemaps');
             if (savedSitemaps) document.getElementById('sitemapUrls').value = savedSitemaps;
         });
-
-        async function loadUserModels() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const modelSelect = document.getElementById('modelSelect');
-            const modelStatus = document.getElementById('modelStatus');
-            if (!apiKey) return;
-
-            modelStatus.innerText = "⏳ جاري فحص النماذج المتاحة في حسابك...";
-
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-                if (!res.ok) throw new Error("تعذر جلب النماذج.");
-                
-                const data = await res.json();
-                if (data.models && data.models.length > 0) {
-                    const textModels = data.models.filter(m => 
-                        m.supportedGenerationMethods && 
-                        m.supportedGenerationMethods.includes("generateContent")
-                    );
-
-                    if (textModels.length > 0) {
-                        modelSelect.innerHTML = "";
-                        textModels.forEach(m => {
-                            const opt = document.createElement("option");
-                            opt.value = m.name;
-                            opt.innerText = m.displayName ? `${m.displayName} (${m.name})` : m.name;
-                            
-                            // يفضل تلقائياً موديل 3.1-flash-lite
-                            if (m.name.includes("3.1-flash-lite") || m.name.includes("flash-lite")) {
-                                opt.selected = true;
-                            }
-                            modelSelect.appendChild(opt);
-                        });
-                        modelStatus.innerText = `✅ تم تحديث القائمة بنجاح.`;
-                        return;
-                    }
-                }
-            } catch (err) {
-                modelStatus.innerText = "يعمل بالوضع الافتراضي: models/gemini-3.1-flash-lite";
-            }
-        }
 
         document.getElementById('articleFiles').addEventListener('change', (e) => {
             const count = e.target.files.length;
@@ -178,21 +130,23 @@
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
         async function processSingleArticle(modelEndpoint, articleText, urls) {
-            const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (SEO Internal Linking Specialist).
+            const prompt = `أنت أداة برمجية دقيقة جداً ومقيدة مخصصة لحقن الروابط الداخلية (Strict SEO Internal Linker).
 
-المهمة:
-- أمامك قائمة بروابط لصفحات وتصنيفات المتجر.
-- وأمامك نص المقالة.
-- اختر أنسب الروابط (بحد أقصى 3 روابط فقط) التي تتطابق تماماً مع سياق المقال.
-- أدرج الروابط داخل النص بشكل Markdown طبيعي على شكل: [الكلمة المفتاحية](الرابط).
-- شروط SEO: اجعل الكلمة المفتاحية (Anchor text) طبيعية جداً في سياق الجملة وتجنب كلمات مثل "اضغط هنا".
-- لا تجمع الروابط في مكان واحد، وزعها على فقرات المقال.
-- أرجع المقال بالكامل بعد دمج الروابط وبدون أي مقدمات أو شروحات.
+⚠️ قواعد صارمة جداً لا تقبل الاستثناء:
+1. ممنوع منعاً باتاً إضافة أي جملة، كلمة، عبارة، أو فقرة جديدة إلى المقال! لا تقم باختراع أو تأليف أي نص على الإطلاق.
+2. ممنوع إعادة صياغة أو تعديل أو مسح أي كلمة موجودة في المقال الأصلي.
+3. مهمتك الوحيدة فقط:
+   - اقرأ النص الأصلي كما هو.
+   - ابحث داخل النص الحالي عن كلمات مفتاحية (مكتوبة وقائمة بالفعل في المقال) ترتبط بصفحات المتجر.
+   - حوّل تلك الكلمات الموجودة بالفعل فقط إلى رابط سياقي بصيغة Markdown على شكل: [نفس الكلمة الأصلية تماماً](الرابط).
+4. الحد الأقصى: من رابط واحد إلى 3 روابط فقط في المقال بالكامل.
+5. إذا لم تجد كلمة مطابقة تماماً في النص الأصلي، لا تضع الرابط ولا تخترع سياقاً له (الحفاظ على النص الأصلي له الأولوية القصوى).
+6. أرجع نص المقال كاملاً كما هو، دون زيادة أو نقصان، مع تعديل الكلمات المختارة إلى روابط فقط، وبدون أي مقدمات أو اعتذارات أو ملاحظات.
 
 قائمة روابط المتجر:
 ${urls.join('\n')}
 
-المقال:
+النص الأصلي للمقال (التزم به حرفياً):
 ${articleText}`;
 
             const response = await fetch(modelEndpoint, {
@@ -200,7 +154,9 @@ ${articleText}`;
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.3 }
+                    generationConfig: { 
+                        temperature: 0.0 // إلغاء أي تأليف أو إبداع والالتزام الحرفي بالنص
+                    }
                 })
             });
 
@@ -230,8 +186,8 @@ ${articleText}`;
             localStorage.setItem('gemini_api_key', apiKey);
             localStorage.setItem('saved_sitemaps', sitemapUrlsInput);
 
-            let selectedModel = document.getElementById('modelSelect').value || "models/gemini-3.1-flash-lite";
-            if (!selectedModel.startsWith('models/')) selectedModel = 'models/' + selectedModel;
+            // الموديل الافتراضي دائماً
+            const selectedModel = "models/gemini-3.1-flash-lite";
 
             submitBtn.disabled = true;
             statusContainer.classList.remove('hidden');
@@ -263,8 +219,8 @@ ${articleText}`;
                     const file = files[i];
                     const currentNum = i + 1;
                     
-                    statusText.innerText = `⏳ معالجة المقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `جاري الحقن عبر ${selectedModel.replace('models/', '')}...`;
+                    statusText.innerText = `⏳ حقن الروابط في المقال (${currentNum} من ${totalFiles}): ${file.name}`;
+                    logMessage.innerText = `مطابقة الروابط مع الكلمات الأصلية فقط...`;
 
                     const originalText = await file.text();
                     const updatedContent = await processSingleArticle(geminiEndpoint, originalText, selectedUrls);
@@ -279,8 +235,8 @@ ${articleText}`;
                 }
 
                 processedZip = zip;
-                statusText.innerText = "✅ تمت المعالجة بنجاح!";
-                logMessage.innerText = `تم الانتهاء من معالجة ${totalFiles} مقال.`;
+                statusText.innerText = "✅ تم الانتهاء بنجاح!";
+                logMessage.innerText = `تم حقن ${totalFiles} مقال دون زيادة أي حرف على النص الأصلي.`;
                 downloadContainer.classList.remove('hidden');
 
             } catch (err) {
@@ -296,7 +252,7 @@ ${articleText}`;
             const content = await processedZip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(content);
-            link.download = "articles_with_internal_links.zip";
+            link.download = "seo_linked_articles.zip";
             link.click();
         }
     </script>
