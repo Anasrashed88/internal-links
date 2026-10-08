@@ -14,23 +14,17 @@
             <div>
                 <label class="block text-sm font-semibold mb-1">مفتاح Google AI Studio API Key:</label>
                 <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
-                <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك الشخصي فقط.</span>
+                <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك تلقائياً.</span>
             </div>
 
             <div>
-                <label class="block text-sm font-semibold mb-1">رابط المتجر (Store URL):</label>
-                <input type="url" id="storeUrl" placeholder="https://example.com" class="w-full border p-2 rounded focus:outline-blue-500">
+                <label class="block text-sm font-semibold mb-1">🗺️ روابط خرائط الموقع (Sitemaps) - <span class="text-blue-600 font-normal">رابط واحد على الأقل</span>:</label>
+                <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة المنتجات أو التصنيفات هنا (رابط بكل سطر):&#10;https://example.com/sitemap_products_1.xml&#10;https://example.com/category-sitemap.xml" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
+                <span class="text-xs text-gray-500">💡 يمكنك وضع خريطة المنتجات أو الأقسام مباشرة من متجرك (سلة، زد، ووردبريس، شوبيفاي).</span>
             </div>
 
-            <!-- خيار اختياري في حال فشل جلب خريطة المتجر تلقائياً -->
-            <details class="text-sm border border-dashed p-3 rounded bg-gray-50">
-                <summary class="cursor-pointer text-blue-600 font-semibold">⚙️ خيار بديل: إدخال روابط المتجر يدوياً (اختياري)</summary>
-                <p class="text-xs text-gray-500 mt-1 mb-2">إذا كان المتجر محجوباً أو لم يستجب الـ Sitemap، الصق عينة من روابط المنتجات/الأقسام هنا (كل رابط في سطر):</p>
-                <textarea id="manualUrls" rows="3" placeholder="https://example.com/product-1&#10;https://example.com/category-2" class="w-full border p-2 rounded text-xs"></textarea>
-            </details>
-
             <div>
-                <label class="block text-sm font-semibold mb-1">نص المقالة:</label>
+                <label class="block text-sm font-semibold mb-1">📝 نص المقالة:</label>
                 <textarea id="articleText" rows="6" placeholder="الصق نص المقالة هنا..." class="w-full border p-2 rounded focus:outline-blue-500"></textarea>
             </div>
 
@@ -43,8 +37,8 @@
 
         <div id="resultContainer" class="mt-6 hidden">
             <div class="flex justify-between items-center mb-2">
-                <h2 class="text-lg font-bold">النتيجة:</h2>
-                <button onclick="copyResult()" class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">📋 نسخ النص</button>
+                <h2 class="text-lg font-bold">النتيجة بعد إضافة الروابط:</h2>
+                <button onclick="copyResult()" class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">📋 نسخ المقال</button>
             </div>
             <textarea id="resultText" rows="8" class="w-full border p-3 rounded bg-gray-50 focus:outline-none font-mono text-sm" readonly></textarea>
         </div>
@@ -56,18 +50,22 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('gemini_api_key');
             if (savedKey) document.getElementById('apiKey').value = savedKey;
+
+            const savedSitemaps = localStorage.getItem('saved_sitemaps');
+            if (savedSitemaps) document.getElementById('sitemapUrls').value = savedSitemaps;
         });
 
-        async function fetchWithFallback(url) {
-            // تجربة أكثر من بروكسي في حال تعطل أحدها
+        // جلب محتوى الرابط وتجاوز مشاكل CORS بعدة محاولات
+        async function fetchXmlWithProxy(url) {
             const proxies = [
                 (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
                 (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`
             ];
 
             for (let proxy of proxies) {
                 try {
-                    const res = await fetch(proxy(url));
+                    const res = await fetch(proxy(url.trim()));
                     if (res.ok) {
                         const text = await res.text();
                         if (text && text.includes('<')) return text;
@@ -76,56 +74,56 @@
                     continue;
                 }
             }
-            throw new Error("تعذر الوصول لخريطة المتجر (قد يكون المتجر محمياً بـ Cloudflare). يمكنك استخدام خيار 'إدخال الروابط يدوياً'.");
+            return null;
         }
 
-        async function fetchSitemap(storeUrl) {
-            const cleanUrl = storeUrl.replace(/\/$/, "");
-            const sitemapPaths = ["/sitemap.xml", "/sitemap_products_1.xml"];
-            
-            let xmlText = null;
-            for (let path of sitemapPaths) {
-                try {
-                    xmlText = await fetchWithFallback(cleanUrl + path);
-                    if (xmlText) break;
-                } catch (e) {}
-            }
-
-            if (!xmlText) throw new Error("لم نتمكن من قراءة sitemap.xml للمتجر. يرجى تجربة خيار إضافة الروابط يدوياً بالأسفل.");
+        // استخراج الروابط من ملف الـ XML (ويدعم الخرائط المتفرعة تلقائياً)
+        async function extractUrlsFromSitemap(sitemapUrl) {
+            const xmlText = await fetchXmlWithProxy(sitemapUrl);
+            if (!xmlText) return [];
 
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-            const locs = xmlDoc.getElementsByTagName("loc");
+            const locElements = xmlDoc.getElementsByTagName("loc");
             
             let urls = [];
-            for (let i = 0; i < locs.length; i++) {
-                let u = locs[i].textContent.trim();
-                // استبعاد روابط الـ sitemap الفرعية
-                if (!u.endsWith('.xml')) {
-                    urls.push(u);
+            let subSitemaps = [];
+
+            for (let i = 0; i < locElements.length; i++) {
+                let link = locElements[i].textContent.trim();
+                // إذا كانت الخريطة تحتوي على روابط خرائط فرعية أخرى (.xml)
+                if (link.endsWith('.xml')) {
+                    subSitemaps.push(link);
+                } else {
+                    urls.push(link);
                 }
             }
-            return urls.slice(0, 50);
+
+            // إذا كانت خريطة رئيسية (تحتوي فقط على .xml فرعية)، نقرأ أول خريطة فرعية للمنتجات
+            if (urls.length === 0 && subSitemaps.length > 0) {
+                const targetSub = subSitemaps.find(s => s.includes('product') || s.includes('category')) || subSitemaps[0];
+                return await extractUrlsFromSitemap(targetSub);
+            }
+
+            return urls;
         }
 
         async function processInternalLinks() {
             const apiKeyInput = document.getElementById('apiKey').value.trim();
             const apiKey = HARDCODED_API_KEY.trim() !== "" ? HARDCODED_API_KEY : apiKeyInput;
-            const storeUrl = document.getElementById('storeUrl').value.trim();
-            const manualUrlsInput = document.getElementById('manualUrls').value.trim();
+            const sitemapUrlsInput = document.getElementById('sitemapUrls').value.trim();
             const articleText = document.getElementById('articleText').value.trim();
             
-            const status = document.getElementById('status');
+            const submitBtn = document.getElementById('submitBtn');
             const resultContainer = document.getElementById('resultContainer');
             const resultText = document.getElementById('resultText');
-            const submitBtn = document.getElementById('submitBtn');
 
             if (!apiKey) {
-                showStatus("يرجى إدخال مفتاح Gemini API Key أولاً.", "red");
+                showStatus("يرجى إدخال مفتاح Gemini API Key.", "red");
                 return;
             }
-            if (!storeUrl && !manualUrlsInput) {
-                showStatus("يرجى إدخال رابط المتجر أو وضع روابط يدوية.", "red");
+            if (!sitemapUrlsInput) {
+                showStatus("يرجى إدخال رابط خريطة موقع (Sitemap) واحد على الأقل.", "red");
                 return;
             }
             if (!articleText) {
@@ -134,36 +132,50 @@
             }
 
             localStorage.setItem('gemini_api_key', apiKey);
-            showStatus("⏳ جاري فحص الروابط والمقالة...", "blue");
+            localStorage.setItem('saved_sitemaps', sitemapUrlsInput);
+
+            showStatus("⏳ جاري قراءة خريطة الموقع واستخراج الروابط...", "blue");
             submitBtn.disabled = true;
 
             try {
-                let urls = [];
-                if (manualUrlsInput) {
-                    urls = manualUrlsInput.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-                } else {
-                    urls = await fetchSitemap(storeUrl);
+                const sitemapList = sitemapUrlsInput.split('\n').map(s => s.trim()).filter(s => s.startsWith('http'));
+                
+                if (sitemapList.length === 0) {
+                    throw new Error("تأكد أن رابط الخريطة يبدأ بـ https:// أو http://");
                 }
 
-                if (urls.length === 0) {
-                    throw new Error("لم يتم العثور على أي روابط صالحة للمتجر.");
+                let allUrls = [];
+                for (let sitemap of sitemapList) {
+                    const fetchedUrls = await extractUrlsFromSitemap(sitemap);
+                    allUrls = allUrls.concat(fetchedUrls);
                 }
 
-                showStatus(`🧠 تم العثور على ${urls.length} رابط. جاري المعالجة بذكاء Gemini...`, "blue");
+                // إزالة التكرار
+                allUrls = [...new Set(allUrls)];
+
+                if (allUrls.length === 0) {
+                    throw new Error("تعذر سحب أي روابط من خريطة الموقع المُدخلة. تأكد من صحة الرابط.");
+                }
+
+                // أخذ عينة تصل إلى 70 رابط لإرسالها للذكاء الاصطناعي
+                const selectedUrls = allUrls.slice(0, 70);
+
+                showStatus(`🧠 تم العثور على (${allUrls.length}) صفحة بنجاح! جاري دمج أنسب 3 روابط عبر Gemini...`, "blue");
 
                 const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (Internal SEO Specialist).
 
 المهمة:
 - أمامك قائمة بروابط صفحات وتصنيفات المتجر.
 - وأمامك نص مقالة.
-- اختر أنسب الروابط (بحد أقصى 3 روابط فقط) التي تتطابق تماماً مع سياق المقال.
+- اختر أنسب الروابط (بحد أقصى 3 روابط فقط) التي تتطابق تماماً مع سياق المقال وموضوعه.
 - أدرج الروابط داخل النص بشكل Markdown طبيعي مثل: [الكلمة المفتاحية](الرابط).
-- شروط SEO: اجعل الكلمة المفتاحية (Anchor text) طبيعية وضمن السياق، تجنب كلمات مثل "اضغط هنا" أو "هذا الرابط".
-- وزع الروابط بسلاسة على سياق المقال.
-- أرجع المقال كاملاً بعد دمج الروابط بدون إضافة أي ملاحظات أو مقدمات من قبلك.
+- شروط الـ SEO: 
+  1. اجعل نص الرابط (Anchor text) طبيعياً جداً ضمن سياق الجملة، وتجنب كلمات مثل "اضغط هنا" أو "شاهد هذا".
+  2. وزع الروابط على فقرات مختلفة ولا تجمعها في نفس الفقرة.
+- أرجع نص المقالة بالكامل بعد دمج الروابط بدون إضافة أي ملاحظات أو مقدمات من قبلك.
 
-قائمة الروابط:
-${urls.join('\n')}
+قائمة الروابط المتاحة:
+${selectedUrls.join('\n')}
 
 المقال:
 ${articleText}`;
@@ -185,13 +197,9 @@ ${articleText}`;
                     throw new Error(`خطأ من Google: ${data.error.message}`);
                 }
 
-                if (!data.candidates || data.candidates.length === 0) {
-                    throw new Error("لم يتمكن النموذج من إنتاج رد. تأكد من صحة المفتاح.");
-                }
-
                 resultText.value = data.candidates[0].content.parts[0].text;
                 resultContainer.classList.remove('hidden');
-                showStatus("✅ تم دمج الروابط بنجاح!", "green");
+                showStatus(`✅ تم دمج الروابط بنجاح من بين ${allUrls.length} صفحة متوفرة!`, "green");
 
             } catch (err) {
                 showStatus("❌ " + err.message, "red");
