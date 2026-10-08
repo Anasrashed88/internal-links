@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مُولّد الروابط الداخلية الجماعي (Bulk SEO Linker)</title>
+    <title>مُولّد الروابط الداخلية الجماعي (Gemini 3.1 Flash Lite)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
         <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">📦 مُعالج المقالات الجماعي وحقن الروابط (SEO)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">ارفع ملفات المقالات (.txt) دفعة واحدة، وسنقوم بحقنها وتنزيلها كملف ZIP</p>
+        <p class="text-sm text-gray-500 text-center mb-6">يعمل بواسطة: <span class="font-bold text-blue-600">Gemini 3.1 Flash Lite</span> ⚡</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
             <div>
                 <label class="block text-sm font-semibold mb-1">مفتاح Google AI Studio API Key:</label>
-                <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
+                <div class="flex gap-2">
+                    <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
+                    <button onclick="loadUserModels()" class="bg-gray-800 hover:bg-black text-white px-3 py-2 rounded text-xs whitespace-nowrap">🔄 فحص النماذج</button>
+                </div>
                 <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك تلقائياً.</span>
             </div>
 
-            <!-- 2. اختيار الموديل القوي -->
+            <!-- 2. اختيار الموديل (مضبوط على Gemini 3.1 Flash Lite) -->
             <div>
-                <label class="block text-sm font-semibold mb-1">🤖 اختيار الموديل (Model):</label>
+                <label class="block text-sm font-semibold mb-1">🤖 الموديل المستخدم:</label>
                 <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-sm font-mono">
-                    <option value="models/gemini-3.8-pro" selected>🔥 Gemini 3.8 Pro (المودل الأقوى والأعلى دقة للـ SEO)</option>
-                    <option value="models/gemini-3.8-flash">⚡ Gemini 3.8 Flash (سريع وموصى به من Google)</option>
-                    <option value="custom">✍️ كتابة موديل آخر يدوياً...</option>
+                    <option value="models/gemini-3.1-flash-lite" selected>⚡ models/gemini-3.1-flash-lite (افتراضي)</option>
                 </select>
-                <input type="text" id="customModelInput" placeholder="اكتب اسم المودل هنا مثل: models/gemini-3.8-pro" class="w-full border p-2 rounded mt-2 text-sm font-mono hidden">
+                <span id="modelStatus" class="text-xs text-blue-600 mt-1 block"></span>
             </div>
 
             <!-- 3. روابط الخرائط -->
@@ -75,21 +76,55 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('gemini_api_key');
-            if (savedKey) document.getElementById('apiKey').value = savedKey;
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                loadUserModels();
+            }
 
             const savedSitemaps = localStorage.getItem('saved_sitemaps');
             if (savedSitemaps) document.getElementById('sitemapUrls').value = savedSitemaps;
         });
 
-        document.getElementById('modelSelect').addEventListener('change', (e) => {
-            const customInput = document.getElementById('customModelInput');
-            if (e.target.value === 'custom') {
-                customInput.classList.remove('hidden');
-                customInput.focus();
-            } else {
-                customInput.classList.add('hidden');
+        async function loadUserModels() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const modelSelect = document.getElementById('modelSelect');
+            const modelStatus = document.getElementById('modelStatus');
+            if (!apiKey) return;
+
+            modelStatus.innerText = "⏳ جاري فحص النماذج المتاحة في حسابك...";
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (!res.ok) throw new Error("تعذر جلب النماذج.");
+                
+                const data = await res.json();
+                if (data.models && data.models.length > 0) {
+                    const textModels = data.models.filter(m => 
+                        m.supportedGenerationMethods && 
+                        m.supportedGenerationMethods.includes("generateContent")
+                    );
+
+                    if (textModels.length > 0) {
+                        modelSelect.innerHTML = "";
+                        textModels.forEach(m => {
+                            const opt = document.createElement("option");
+                            opt.value = m.name;
+                            opt.innerText = m.displayName ? `${m.displayName} (${m.name})` : m.name;
+                            
+                            // يفضل تلقائياً موديل 3.1-flash-lite
+                            if (m.name.includes("3.1-flash-lite") || m.name.includes("flash-lite")) {
+                                opt.selected = true;
+                            }
+                            modelSelect.appendChild(opt);
+                        });
+                        modelStatus.innerText = `✅ تم تحديث القائمة بنجاح.`;
+                        return;
+                    }
+                }
+            } catch (err) {
+                modelStatus.innerText = "يعمل بالوضع الافتراضي: models/gemini-3.1-flash-lite";
             }
-        });
+        }
 
         document.getElementById('articleFiles').addEventListener('change', (e) => {
             const count = e.target.files.length;
@@ -195,15 +230,8 @@ ${articleText}`;
             localStorage.setItem('gemini_api_key', apiKey);
             localStorage.setItem('saved_sitemaps', sitemapUrlsInput);
 
-            // تحديد الموديل المختار
-            let selectedModel = document.getElementById('modelSelect').value;
-            if (selectedModel === 'custom') {
-                selectedModel = document.getElementById('customModelInput').value.trim();
-                if (!selectedModel) return alert("يرجى إدخال اسم الموديل المخصص.");
-            }
-            if (!selectedModel.startsWith('models/')) {
-                selectedModel = 'models/' + selectedModel;
-            }
+            let selectedModel = document.getElementById('modelSelect').value || "models/gemini-3.1-flash-lite";
+            if (!selectedModel.startsWith('models/')) selectedModel = 'models/' + selectedModel;
 
             submitBtn.disabled = true;
             statusContainer.classList.remove('hidden');
@@ -247,7 +275,7 @@ ${articleText}`;
                     progressBar.style.width = `${pct}%`;
                     progressPercent.innerText = `${pct}%`;
 
-                    if (i < totalFiles - 1) await sleep(1500);
+                    if (i < totalFiles - 1) await sleep(1200);
                 }
 
                 processedZip = zip;
