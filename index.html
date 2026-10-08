@@ -3,29 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مُولّد الروابط الداخلية الجماعي (Gemini 3.1 Flash Lite)</title>
+    <title>مُولّد الروابط الداخلية الدقيق (SEO Exact Linker)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">📦 مُعالج المقالات وحقن الروابط السياقية (SEO)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">حقن دقيق بدون تعديل أو اختراع أي نص إضافي ⚡</p>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط الداخلية الدقيق (بدون تعديل النصوص)</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">يحقن الروابط على نصوصك الأصلية فقط دون إضافة أو تغيير أي حرف من المقال</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
             <div>
                 <label class="block text-sm font-semibold mb-1">مفتاح Google AI Studio API Key:</label>
-                <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
+                <div class="flex gap-2">
+                    <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
+                    <button onclick="loadUserModels()" class="bg-gray-800 hover:bg-black text-white px-3 py-2 rounded text-xs whitespace-nowrap">🔄 فحص النماذج</button>
+                </div>
                 <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك تلقائياً.</span>
             </div>
 
-            <!-- 2. الموديل الافتراضي الثابت -->
+            <!-- 2. الموديل -->
             <div>
-                <label class="block text-sm font-semibold mb-1">🤖 الموديل المستخدم (الافتراضي):</label>
-                <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-gray-50 text-sm font-mono" disabled>
+                <label class="block text-sm font-semibold mb-1">🤖 الموديل المستخدم:</label>
+                <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-sm font-mono">
                     <option value="models/gemini-3.1-flash-lite" selected>⚡ models/gemini-3.1-flash-lite (افتراضي)</option>
                 </select>
+                <span id="modelStatus" class="text-xs text-blue-600 mt-1 block"></span>
             </div>
 
             <!-- 3. روابط الخرائط -->
@@ -42,11 +46,11 @@
             </div>
 
             <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 ابدأ حقن الروابط بدقة 100%
+                🚀 ابدأ حقن الروابط في المقالات
             </button>
         </div>
 
-        <!-- شريط التقدم -->
+        <!-- صندوق حالة التقدم -->
         <div id="statusContainer" class="mt-6 hidden">
             <div class="flex justify-between text-sm font-semibold mb-1">
                 <span id="statusText">جاري المعالجة...</span>
@@ -60,9 +64,9 @@
 
         <!-- صندوق التنزيل -->
         <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
-            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء من معالجة جميع المقالات دون أي زيادة على النصوص!</h3>
+            <h3 class="text-green-800 font-bold mb-2">🎉 تم حقن الروابط بنجاح مع الحفاظ 100% على نصوصك الأصلية!</h3>
             <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
-                📥 تحميل المقالات المحقونة (ZIP)
+                📥 تحميل المقالات في ملف ZIP
             </button>
         </div>
     </div>
@@ -72,11 +76,53 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('gemini_api_key');
-            if (savedKey) document.getElementById('apiKey').value = savedKey;
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                loadUserModels();
+            }
 
             const savedSitemaps = localStorage.getItem('saved_sitemaps');
             if (savedSitemaps) document.getElementById('sitemapUrls').value = savedSitemaps;
         });
+
+        async function loadUserModels() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const modelSelect = document.getElementById('modelSelect');
+            const modelStatus = document.getElementById('modelStatus');
+            if (!apiKey) return;
+
+            modelStatus.innerText = "⏳ جاري فحص النماذج المتاحة في حسابك...";
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                if (!res.ok) throw new Error("تعذر جلب النماذج.");
+                
+                const data = await res.json();
+                if (data.models && data.models.length > 0) {
+                    const textModels = data.models.filter(m => 
+                        m.supportedGenerationMethods && 
+                        m.supportedGenerationMethods.includes("generateContent")
+                    );
+
+                    if (textModels.length > 0) {
+                        modelSelect.innerHTML = "";
+                        textModels.forEach(m => {
+                            const opt = document.createElement("option");
+                            opt.value = m.name;
+                            opt.innerText = m.displayName ? `${m.displayName} (${m.name})` : m.name;
+                            if (m.name.includes("3.1-flash-lite") || m.name.includes("flash-lite")) {
+                                opt.selected = true;
+                            }
+                            modelSelect.appendChild(opt);
+                        });
+                        modelStatus.innerText = `✅ تم تحديث القائمة بنجاح.`;
+                        return;
+                    }
+                }
+            } catch (err) {
+                modelStatus.innerText = "يعمل بالوضع الافتراضي: models/gemini-3.1-flash-lite";
+            }
+        }
 
         document.getElementById('articleFiles').addEventListener('change', (e) => {
             const count = e.target.files.length;
@@ -129,24 +175,24 @@
 
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        async function processSingleArticle(modelEndpoint, articleText, urls) {
-            const prompt = `أنت أداة برمجية دقيقة جداً ومقيدة مخصصة لحقن الروابط الداخلية (Strict SEO Internal Linker).
+        // طلب الروابط والكلمات فقط كـ JSON دون السماح للذكاء الاصطناعي بتعديل المقال
+        async function getLinksMapping(modelEndpoint, articleText, urls) {
+            const prompt = `أنت خبير محترف في تحسين محركات البحث (SEO).
+مهمتك الوحيدة: البحث داخل نص المقال المرفق عن كلمات أو عبارات مفتاحية موجودة *بالفعل وحرفياً* فيه لتكون نصوص ربط (Anchor Text) مناسبة للروابط المرفقة.
 
-⚠️ قواعد صارمة جداً لا تقبل الاستثناء:
-1. ممنوع منعاً باتاً إضافة أي جملة، كلمة، عبارة، أو فقرة جديدة إلى المقال! لا تقم باختراع أو تأليف أي نص على الإطلاق.
-2. ممنوع إعادة صياغة أو تعديل أو مسح أي كلمة موجودة في المقال الأصلي.
-3. مهمتك الوحيدة فقط:
-   - اقرأ النص الأصلي كما هو.
-   - ابحث داخل النص الحالي عن كلمات مفتاحية (مكتوبة وقائمة بالفعل في المقال) ترتبط بصفحات المتجر.
-   - حوّل تلك الكلمات الموجودة بالفعل فقط إلى رابط سياقي بصيغة Markdown على شكل: [نفس الكلمة الأصلية تماماً](الرابط).
-4. الحد الأقصى: من رابط واحد إلى 3 روابط فقط في المقال بالكامل.
-5. إذا لم تجد كلمة مطابقة تماماً في النص الأصلي، لا تضع الرابط ولا تخترع سياقاً له (الحفاظ على النص الأصلي له الأولوية القصوى).
-6. أرجع نص المقال كاملاً كما هو، دون زيادة أو نقصان، مع تعديل الكلمات المختارة إلى روابط فقط، وبدون أي مقدمات أو اعتذارات أو ملاحظات.
+شروط صارمة جداً:
+1. ممنوع نهائياً اختراع أو كتابة أي جملة أو كلمة من عندك.
+2. الكلمات التي تختارها في "exact_text" يجب أن تكون منسوخة حرفياً (Exact Match) من نص المقال كما كُتبت تماماً.
+3. اختر من رابط واحد إلى 3 روابط كحد أقصى.
+4. يجب أن يكون الناتج حصراً بصيغة JSON Array بدون أي نص قبله أو بعده:
+[
+  {"exact_text": "كلمة موجودة بالنص حرفياً", "url": "الرابط المطابق"}
+]
 
-قائمة روابط المتجر:
+قائمة الروابط المتاحة:
 ${urls.join('\n')}
 
-النص الأصلي للمقال (التزم به حرفياً):
+نص المقال:
 ${articleText}`;
 
             const response = await fetch(modelEndpoint, {
@@ -155,14 +201,47 @@ ${articleText}`;
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: { 
-                        temperature: 0.0 // إلغاء أي تأليف أو إبداع والالتزام الحرفي بالنص
+                        temperature: 0.1 // درجة منخفضة جداً لمنع أي إبداع أو تأليف
                     }
                 })
             });
 
             const data = await response.json();
             if (data.error) throw new Error(data.error.message);
-            return data.candidates[0].content.parts[0].text;
+
+            let raw = data.candidates[0].content.parts[0].text.trim();
+            // تنظيف أي علامات كود Markdown
+            raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
+            
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                console.warn("فشل قراءة الـ JSON، لم يتم حقن روابط لهذا المقال.", raw);
+                return [];
+            }
+        }
+
+        // حقن الروابط في النص الأصلي برمجياً عبر استبدال النصوص المطابقة فقط
+        function injectLinksIntoOriginalText(originalText, linksArray) {
+            let resultText = originalText;
+            if (!Array.isArray(linksArray)) return originalText;
+
+            // تطبيق بحد أقصى 3 روابط
+            const items = linksArray.slice(0, 3);
+
+            for (const item of items) {
+                const phrase = item.exact_text ? item.exact_text.trim() : null;
+                const link = item.url ? item.url.trim() : null;
+
+                // التحقق أن الكلمة موجودة بالفعل في النص الأصلي ولم يتم ربطها مسبقاً
+                if (phrase && link && resultText.includes(phrase)) {
+                    if (!resultText.includes(`[${phrase}]`)) {
+                        // استبدال أول ظهور للكلمة فقط بالرابط
+                        resultText = resultText.replace(phrase, `[${phrase}](${link})`);
+                    }
+                }
+            }
+            return resultText;
         }
 
         async function startBatchProcessing() {
@@ -186,8 +265,8 @@ ${articleText}`;
             localStorage.setItem('gemini_api_key', apiKey);
             localStorage.setItem('saved_sitemaps', sitemapUrlsInput);
 
-            // الموديل الافتراضي دائماً
-            const selectedModel = "models/gemini-3.1-flash-lite";
+            let selectedModel = document.getElementById('modelSelect').value || "models/gemini-3.1-flash-lite";
+            if (!selectedModel.startsWith('models/')) selectedModel = 'models/' + selectedModel;
 
             submitBtn.disabled = true;
             statusContainer.classList.remove('hidden');
@@ -219,11 +298,16 @@ ${articleText}`;
                     const file = files[i];
                     const currentNum = i + 1;
                     
-                    statusText.innerText = `⏳ حقن الروابط في المقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `مطابقة الروابط مع الكلمات الأصلية فقط...`;
+                    statusText.innerText = `⏳ فحص المقال (${currentNum} من ${totalFiles}): ${file.name}`;
+                    logMessage.innerText = `جاري تحديد أنسب الروابط لنصوصك الأصلية...`;
 
                     const originalText = await file.text();
-                    const updatedContent = await processSingleArticle(geminiEndpoint, originalText, selectedUrls);
+                    
+                    // 1. استخراج الكلمات المطابقة من الذكاء الاصطناعي فقط
+                    const linksMapping = await getLinksMapping(geminiEndpoint, originalText, selectedUrls);
+                    
+                    // 2. حقن الروابط داخل نصوصك أنت الحرفية برمجياً دون تعديل أي شيء آخر
+                    const updatedContent = injectLinksIntoOriginalText(originalText, linksMapping);
                     
                     zip.file(file.name, updatedContent);
 
@@ -236,7 +320,7 @@ ${articleText}`;
 
                 processedZip = zip;
                 statusText.innerText = "✅ تم الانتهاء بنجاح!";
-                logMessage.innerText = `تم حقن ${totalFiles} مقال دون زيادة أي حرف على النص الأصلي.`;
+                logMessage.innerText = `تم حقن الروابط في ${totalFiles} مقال مع الحفاظ الكامل على نصوصك.`;
                 downloadContainer.classList.remove('hidden');
 
             } catch (err) {
@@ -252,7 +336,7 @@ ${articleText}`;
             const content = await processedZip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(content);
-            link.download = "seo_linked_articles.zip";
+            link.download = "articles_with_internal_links.zip";
             link.click();
         }
     </script>
