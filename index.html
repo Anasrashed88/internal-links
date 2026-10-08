@@ -3,48 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أداة توليد الروابط الداخلية (SEO - Gemini)</title>
+    <title>مُولّد الروابط الداخلية الجماعي (Bulk SEO Linker)</title>
+    <!-- Tailwind CSS لتنسيق الواجهة -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- مكتبة JSZip لضغط الملفات وتحميلها -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-6 text-center text-blue-700">🔗 مُوَلّد الروابط الداخلية لمحركات البحث (Gemini AI)</h1>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">📦 مُعالج المقالات الجماعي وحقن الروابط (SEO)</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">ارفع ملفات المقالات (.txt) دفعة واحدة، وسنقوم بحقنها وتنزيلها كملف ZIP</p>
 
         <div class="space-y-4">
+            <!-- 1. مفتاح الـ API -->
             <div>
                 <label class="block text-sm font-semibold mb-1">مفتاح Google AI Studio API Key:</label>
                 <input type="password" id="apiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
                 <span class="text-xs text-gray-500">يُحفظ بأمان في متصفحك تلقائياً.</span>
             </div>
 
+            <!-- 2. اختيار الموديل -->
+            <div>
+                <label class="block text-sm font-semibold mb-1">🤖 اختيار الموديل:</label>
+                <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-sm">
+                    <option value="auto">تلقائي (اختيار أحدث موديل Flash متاح)</option>
+                    <option value="models/gemini-3.5-flash">Gemini 3.5 Flash (سريع ومثالي للكميات)</option>
+                    <option value="models/gemini-3.5-flash">Gemini 3.5 Pro (أعلى دقة)</option>
+                </select>
+            </div>
+
+            <!-- 3. روابط الخرائط -->
             <div>
                 <label class="block text-sm font-semibold mb-1">🗺️ روابط خرائط الموقع (Sitemaps):</label>
                 <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة المنتجات أو الأقسام هنا:&#10;https://example.com/sitemap_products_1.xml" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
             </div>
 
+            <!-- 4. رفع الملفات -->
             <div>
-                <label class="block text-sm font-semibold mb-1">📝 نص المقالة:</label>
-                <textarea id="articleText" rows="6" placeholder="الصق نص المقالة هنا..." class="w-full border p-2 rounded focus:outline-blue-500"></textarea>
+                <label class="block text-sm font-semibold mb-1">📁 ارفع ملفات المقالات (صيغة .txt):</label>
+                <input type="file" id="articleFiles" multiple accept=".txt" class="w-full border p-2 rounded bg-gray-50 text-sm cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-600 file:text-white file:text-xs hover:file:bg-blue-700">
+                <span id="fileCount" class="text-xs text-gray-500 mt-1 block">لم يتم اختيار أي ملفات بعد.</span>
             </div>
 
-            <button onclick="processInternalLinks()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 معالجة وتوليد الروابط
+            <!-- زر التشغيل -->
+            <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
+                🚀 ابدأ معالجة جميع المقالات
             </button>
         </div>
 
-        <div id="status" class="mt-4 p-3 rounded-lg text-center font-medium hidden"></div>
-
-        <div id="resultContainer" class="mt-6 hidden">
-            <div class="flex justify-between items-center mb-2">
-                <h2 class="text-lg font-bold">النتيجة بعد إضافة الروابط:</h2>
-                <button onclick="copyResult()" class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded">📋 نسخ المقال</button>
+        <!-- صندوق حالة التقدم -->
+        <div id="statusContainer" class="mt-6 hidden">
+            <div class="flex justify-between text-sm font-semibold mb-1">
+                <span id="statusText">جاري المعالجة...</span>
+                <span id="progressPercent">0%</span>
             </div>
-            <textarea id="resultText" rows="8" class="w-full border p-3 rounded bg-gray-50 focus:outline-none font-mono text-sm" readonly></textarea>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div id="logMessage" class="mt-2 text-xs text-gray-600"></div>
+        </div>
+
+        <!-- صندوق التنزيل بعد الانتهاء -->
+        <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
+            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء من معالجة جميع المقالات بنجاح!</h3>
+            <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
+                📥 تحميل كل المقالات في ملف ZIP
+            </button>
         </div>
     </div>
 
     <script>
-        const HARDCODED_API_KEY = "";
+        let processedZip = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem('gemini_api_key');
@@ -52,6 +81,11 @@
 
             const savedSitemaps = localStorage.getItem('saved_sitemaps');
             if (savedSitemaps) document.getElementById('sitemapUrls').value = savedSitemaps;
+        });
+
+        document.getElementById('articleFiles').addEventListener('change', (e) => {
+            const count = e.target.files.length;
+            document.getElementById('fileCount').innerText = count > 0 ? `تم اختيار ${count} ملف.` : "لم يتم اختيار أي ملفات.";
         });
 
         async function fetchXmlWithProxy(url) {
@@ -68,9 +102,7 @@
                         const text = await res.text();
                         if (text && text.includes('<')) return text;
                     }
-                } catch (e) {
-                    continue;
-                }
+                } catch (e) { continue; }
             }
             return null;
         }
@@ -88,11 +120,8 @@
 
             for (let i = 0; i < locElements.length; i++) {
                 let link = locElements[i].textContent.trim();
-                if (link.endsWith('.xml')) {
-                    subSitemaps.push(link);
-                } else {
-                    urls.push(link);
-                }
+                if (link.endsWith('.xml')) subSitemaps.push(link);
+                else urls.push(link);
             }
 
             if (urls.length === 0 && subSitemaps.length > 0) {
@@ -103,152 +132,151 @@
             return urls;
         }
 
-        // دالة لاكتشاف أحدث نموذج متاح تلقائياً لحسابك
         async function getBestAvailableModel(apiKey) {
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
                 if (res.ok) {
                     const data = await res.json();
                     if (data.models && data.models.length > 0) {
-                        // البحث عن نموذج flash فعال
-                        const flashModel = data.models.find(m => 
-                            m.supportedGenerationMethods && 
-                            m.supportedGenerationMethods.includes("generateContent") && 
-                            m.name.includes("flash")
-                        );
-                        if (flashModel) return flashModel.name;
-
-                        // أو أي نموذج gemini فعال
-                        const anyGemini = data.models.find(m => 
-                            m.supportedGenerationMethods && 
-                            m.supportedGenerationMethods.includes("generateContent") && 
-                            m.name.includes("gemini")
-                        );
-                        if (anyGemini) return anyGemini.name;
+                        const flash = data.models.find(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("flash"));
+                        if (flash) return flash.name;
                     }
                 }
-            } catch (e) {
-                console.warn("Could not list models, falling back to default.", e);
-            }
-            // اختيار افتراضي حديث في حال تعذر جلب القائمة
+            } catch (e) {}
             return "models/gemini-2.5-flash";
         }
 
-        async function processInternalLinks() {
-            const apiKeyInput = document.getElementById('apiKey').value.trim();
-            const apiKey = HARDCODED_API_KEY.trim() !== "" ? HARDCODED_API_KEY : apiKeyInput;
-            const sitemapUrlsInput = document.getElementById('sitemapUrls').value.trim();
-            const articleText = document.getElementById('articleText').value.trim();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const resultContainer = document.getElementById('resultContainer');
-            const resultText = document.getElementById('resultText');
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-            if (!apiKey) {
-                showStatus("يرجى إدخال مفتاح Gemini API Key.", "red");
-                return;
-            }
-            if (!sitemapUrlsInput) {
-                showStatus("يرجى إدخال رابط خريطة موقع (Sitemap) واحد على الأقل.", "red");
-                return;
-            }
-            if (!articleText) {
-                showStatus("يرجى إدخال نص المقالة.", "red");
-                return;
-            }
+        async function processSingleArticle(apiKey, modelEndpoint, articleText, urls) {
+            const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (SEO Internal Linking Specialist).
+
+المهمة:
+- أمامك قائمة بروابط لصفحات وتصنيفات المتجر.
+- وأمامك نص المقالة.
+- اختر أنسب الروابط (بحد أقصى 3 روابط فقط) التي تتطابق تماماً مع سياق المقال.
+- أدرج الروابط داخل النص بشكل Markdown طبيعي على شكل: [الكلمة المفتاحية](الرابط).
+- شروط SEO: اجعل الكلمة المفتاحية (Anchor text) طبيعية جداً في سياق الجملة وتجنب كلمات مثل "اضغط هنا".
+- لا تجمع الروابط في مكان واحد، وزعها على فقرات المقال.
+- أرجع المقال بالكامل بعد دمج الروابط وبدون أي مقدمات أو شروحات.
+
+قائمة روابط المتجر:
+${urls.join('\n')}
+
+المقال:
+${articleText}`;
+
+            const response = await fetch(modelEndpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { temperature: 0.3 }
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        async function startBatchProcessing() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const sitemapUrlsInput = document.getElementById('sitemapUrls').value.trim();
+            const fileInput = document.getElementById('articleFiles');
+            const files = fileInput.files;
+
+            const submitBtn = document.getElementById('submitBtn');
+            const statusContainer = document.getElementById('statusContainer');
+            const downloadContainer = document.getElementById('downloadContainer');
+            const statusText = document.getElementById('statusText');
+            const progressPercent = document.getElementById('progressPercent');
+            const progressBar = document.getElementById('progressBar');
+            const logMessage = document.getElementById('logMessage');
+
+            if (!apiKey) return alert("يرجى إدخال مفتاح Google AI Studio API Key.");
+            if (!sitemapUrlsInput) return alert("يرجى إدخال رابط خريطة موقع (Sitemap) واحد على الأقل.");
+            if (!files || files.length === 0) return alert("يرجى اختيار ملف مقال (.txt) واحد على الأقل.");
 
             localStorage.setItem('gemini_api_key', apiKey);
             localStorage.setItem('saved_sitemaps', sitemapUrlsInput);
 
-            showStatus("⏳ جاري استخراج الروابط من خريطة الموقع...", "blue");
             submitBtn.disabled = true;
+            statusContainer.classList.remove('hidden');
+            downloadContainer.classList.add('hidden');
+            
+            progressBar.style.width = '0%';
+            progressPercent.innerText = '0%';
+            statusText.innerText = "⏳ جاري استخراج صفحات المتجر من الـ Sitemap...";
+            logMessage.innerText = "";
 
             try {
+                // 1. جلب روابط المتجر
                 const sitemapList = sitemapUrlsInput.split('\n').map(s => s.trim()).filter(s => s.startsWith('http'));
-                
-                if (sitemapList.length === 0) {
-                    throw new Error("تأكد أن رابط الخريطة يبدأ بـ https:// أو http://");
-                }
-
                 let allUrls = [];
                 for (let sitemap of sitemapList) {
                     const fetchedUrls = await extractUrlsFromSitemap(sitemap);
                     allUrls = allUrls.concat(fetchedUrls);
                 }
-
                 allUrls = [...new Set(allUrls)];
 
-                if (allUrls.length === 0) {
-                    throw new Error("تعذر سحب أي روابط من خريطة الموقع المُدخلة. تأكد من صحة الرابط.");
+                if (allUrls.length === 0) throw new Error("تعذر سحب أي روابط من خريطة الموقع.");
+
+                const selectedUrls = allUrls.slice(0, 80);
+
+                // 2. تحديد الموديل
+                const selectedModel = document.getElementById('modelSelect').value;
+                const activeModel = selectedModel === "auto" ? await getBestAvailableModel(apiKey) : selectedModel;
+                const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${apiKey}`;
+
+                // 3. معالجة الملفات في لوب
+                const zip = new JSZip();
+                const totalFiles = files.length;
+
+                for (let i = 0; i < totalFiles; i++) {
+                    const file = files[i];
+                    const currentNum = i + 1;
+                    
+                    statusText.innerText = `⏳ معالجة المقال (${currentNum} من ${totalFiles}): ${file.name}`;
+                    logMessage.innerText = `جاري حقن الروابط بواسطة الذكاء الاصطناعي...`;
+
+                    const originalText = await file.text();
+                    
+                    // حقن الروابط
+                    const updatedContent = await processSingleArticle(apiKey, geminiEndpoint, originalText, selectedUrls);
+                    
+                    // إضافة الملف المعالج إلى الـ ZIP بنفس اسمه
+                    zip.file(file.name, updatedContent);
+
+                    // تحديث شريط التقدم
+                    const pct = Math.round((currentNum / totalFiles) * 100);
+                    progressBar.style.width = `${pct}%`;
+                    progressPercent.innerText = `${pct}%`;
+
+                    // انتظار ثانية ونصف بين كل مقال لتجنب تجاوز حد الطلبات في الثانية (Rate Limit)
+                    if (i < totalFiles - 1) await sleep(1500);
                 }
 
-                const selectedUrls = allUrls.slice(0, 70);
-
-                showStatus("🔍 جاري فحص أحدث نموذج ذكاء اصطناعي متاح في حسابك...", "blue");
-                const activeModel = await getBestAvailableModel(apiKey);
-
-                showStatus(`🧠 تم ربط (${allUrls.length}) صفحة بنجاح! جاري الدمج عبر ${activeModel.replace('models/', '')}...`, "blue");
-
-                const prompt = `أنت خبير محترف في تحسين محركات البحث وتنسيق الروابط الداخلية (Internal SEO Specialist).
-
-المهمة:
-- أمامك قائمة بروابط صفحات وتصنيفات المتجر.
-- وأمامك نص مقالة.
-- اختر أنسب الروابط (بحد أقصى 3 روابط فقط) التي تتطابق تماماً مع سياق المقال وموضوعه.
-- أدرج الروابط داخل النص بشكل Markdown طبيعي مثل: [الكلمة المفتاحية](الرابط).
-- شروط الـ SEO: 
-  1. اجعل نص الرابط (Anchor text) طبيعياً جداً ضمن سياق الجملة، وتجنب كلمات مثل "اضغط هنا" أو "شاهد هذا".
-  2. وزع الروابط على فقرات مختلفة ولا تجمعها في نفس الفقرة.
-- أرجع نص المقالة بالكامل بعد دمج الروابط بدون إضافة أي ملاحظات أو مقدمات من قبلك.
-
-قائمة الروابط المتاحة:
-${selectedUrls.join('\n')}
-
-المقال:
-${articleText}`;
-
-                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${activeModel}:generateContent?key=${apiKey}`;
-
-                const response = await fetch(geminiUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.3 }
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(`خطأ من Google: ${data.error.message}`);
-                }
-
-                resultText.value = data.candidates[0].content.parts[0].text;
-                resultContainer.classList.remove('hidden');
-                showStatus(`✅ تم دمج الروابط بنجاح!`, "green");
+                processedZip = zip;
+                statusText.innerText = "✅ تمت المعالجة بنجاح!";
+                logMessage.innerText = `تم الانتهاء من معالجة ${totalFiles} مقال.`;
+                downloadContainer.classList.remove('hidden');
 
             } catch (err) {
-                showStatus("❌ " + err.message, "red");
+                alert("❌ حدث خطأ: " + err.message);
+                statusText.innerText = "توقفت العملية بسبب خطأ.";
             } finally {
                 submitBtn.disabled = false;
             }
         }
 
-        function showStatus(text, color) {
-            const status = document.getElementById('status');
-            status.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-blue-100', 'text-blue-700', 'bg-green-100', 'text-green-700');
-            if (color === "red") status.classList.add('bg-red-100', 'text-red-700');
-            else if (color === "green") status.classList.add('bg-green-100', 'text-green-700');
-            else status.classList.add('bg-blue-100', 'text-blue-700');
-            status.innerText = text;
-        }
-
-        function copyResult() {
-            const text = document.getElementById('resultText');
-            text.select();
-            navigator.clipboard.writeText(text.value);
-            alert("تم نسخ المقال بنجاح!");
+        async function downloadZip() {
+            if (!processedZip) return;
+            const content = await processedZip.generateAsync({ type: "blob" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(content);
+            link.download = "articles_with_internal_links.zip";
+            link.click();
         }
     </script>
 </body>
