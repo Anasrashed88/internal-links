@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مُولّد الروابط الداخلية الدقيق (SEO Exact Linker)</title>
+    <title>حاقن الروابط السياقي المتقدم (Semantic SEO Linker)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط الداخلية الدقيق (بدون تعديل النصوص)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">يحقن الروابط على نصوصك الأصلية فقط دون إضافة أو تغيير أي حرف من المقال</p>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط السياقي الاحترافي (SEO Intent)</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">يضع الروابط في أدق الأماكن سياقياً بناءً على نية القارئ، مع الحفاظ 100% على نصوصك الأصلية</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
@@ -46,7 +46,7 @@
             </div>
 
             <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 ابدأ حقن الروابط في المقالات
+                🚀 ابدأ التحليل السياقي وحقن الروابط
             </button>
         </div>
 
@@ -64,9 +64,9 @@
 
         <!-- صندوق التنزيل -->
         <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
-            <h3 class="text-green-800 font-bold mb-2">🎉 تم حقن الروابط بنجاح مع الحفاظ 100% على نصوصك الأصلية!</h3>
+            <h3 class="text-green-800 font-bold mb-2">🎉 تم حقن الروابط سياقياً بنجاح بأفضل معايير الـ SEO!</h3>
             <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
-                📥 تحميل المقالات في ملف ZIP
+                📥 تحميل المقالات المعالجة (ZIP)
             </button>
         </div>
     </div>
@@ -175,22 +175,48 @@
 
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        // طلب الروابط والكلمات فقط كـ JSON دون السماح للذكاء الاصطناعي بتعديل المقال
+        // التحليل السياقي المتقدم وفق معايير الـ SEO الاحترافية
         async function getLinksMapping(modelEndpoint, articleText, urls) {
-            const prompt = `أنت خبير محترف في تحسين محركات البحث (SEO).
-مهمتك الوحيدة: البحث داخل نص المقال المرفق عن كلمات أو عبارات مفتاحية موجودة *بالفعل وحرفياً* فيه لتكون نصوص ربط (Anchor Text) مناسبة للروابط المرفقة.
+            // توضيح الرابط ليكون مقروءاً عربياً للذكاء الاصطناعي
+            const readableUrls = urls.map(u => {
+                try {
+                    return `${decodeURI(u)} ===> (${u})`;
+                } catch (e) {
+                    return u;
+                }
+            }).join('\n');
 
-شروط صارمة جداً:
-1. ممنوع نهائياً اختراع أو كتابة أي جملة أو كلمة من عندك.
-2. الكلمات التي تختارها في "exact_text" يجب أن تكون منسوخة حرفياً (Exact Match) من نص المقال كما كُتبت تماماً.
-3. اختر من رابط واحد إلى 3 روابط كحد أقصى.
-4. يجب أن يكون الناتج حصراً بصيغة JSON Array بدون أي نص قبله أو بعده:
+            const prompt = `أنت خبير On-Page SEO ومهندس بنية روابط داخلية (Internal Linking Architect).
+مهمتك: قراءة المقال بالكامل، واختيار ما بين (1 إلى 3 روابط كحد أقصى) من القائمة المرفقة، وتحديد أصح الأماكن سياقياً لوضعها.
+
+⚠️ معايير الـ SEO السياقية الصارمة (Contextual Placement Rules):
+1. **تطابق الموضوع والنية (Topical Alignment):** 
+   - لا تضع الرابط عند مجرد "الذكر العابر" لكلمة معينة في سياق لا علاقة له بالمنتج.
+   - ضعه فقط في الفقرة التي تتناول فعلياً المشكلة أو الميزة أو الموضوع الذي يقدمه هذا الرابط كحل أو كخيار للقارئ.
+
+2. **مناطق الحظر (Strict Exclusion Zones):**
+   - ممنوع الربط في أول فقرة افتتاحية من المقال (المقدمة).
+   - ممنوع الربط داخل العناوين الرئيسية أو الفرعية (العناوين التي تبدأ بـ # أو تفصل الأقسام).
+   - ممنوع وضع أكثر من رابط واحد في نفس الفقرة. يجب توزيع الروابط على أجزاء المقال المختلفة.
+
+3. **جودة نص الرابط (Anchor Text Quality):**
+   - يجب أن يكون نص الرابط عبارة وصفية مفهومة وسلسة نحوياً تتكون من (2 إلى 4 كلمات).
+   - تجنب الكلمات الفردية المعزولة (مثل "عطر" أو "أحذية"). اختر بدلاً منها عبارة غنية بالسياق (مثل: "عطور المسك الأبيض" أو "أحذية الجري الطبية").
+   - يجب أن تكون الكلمات المختارة في "exact_text" منسوخة **حرفياً وبنفس التشكيل والرسم** من داخل نص المقال الأصلي دون أي تعديل.
+
+4. **الجودة فوق الكمية:**
+   - إذا كان المقال لا يحتمل سياقياً وبشكل طبيعي إلا رابطاً واحداً أو رابطين فقط، فلا تجبر نفسك على وضع ثلاثة. 
+
+المطلوب: إرجاع الناتج فقط كـ JSON Array بهذا الشكل الصارم دون أي مقدمات أو علامات إضافية:
 [
-  {"exact_text": "كلمة موجودة بالنص حرفياً", "url": "الرابط المطابق"}
+  {
+    "exact_text": "العبارة الحرفية المنسوخة من المقال",
+    "url": "الرابط الأصلي المقابل لها بالضبط"
+  }
 ]
 
-قائمة الروابط المتاحة:
-${urls.join('\n')}
+قائمة الروابط المتاحة للمتجر:
+${readableUrls}
 
 نص المقال:
 ${articleText}`;
@@ -201,7 +227,7 @@ ${articleText}`;
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: { 
-                        temperature: 0.1 // درجة منخفضة جداً لمنع أي إبداع أو تأليف
+                        temperature: 0.1 // دقة تحليلية عالية جداً
                     }
                 })
             });
@@ -210,34 +236,52 @@ ${articleText}`;
             if (data.error) throw new Error(data.error.message);
 
             let raw = data.candidates[0].content.parts[0].text.trim();
-            // تنظيف أي علامات كود Markdown
             raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
             
             try {
                 return JSON.parse(raw);
             } catch (e) {
-                console.warn("فشل قراءة الـ JSON، لم يتم حقن روابط لهذا المقال.", raw);
+                console.warn("تعذر استخراج JSON سياقي:", raw);
                 return [];
             }
         }
 
-        // حقن الروابط في النص الأصلي برمجياً عبر استبدال النصوص المطابقة فقط
+        // تطبيق الروابط برمجياً والتأكد من عدم وجود روابط داخل العناوين
         function injectLinksIntoOriginalText(originalText, linksArray) {
             let resultText = originalText;
-            if (!Array.isArray(linksArray)) return originalText;
+            if (!Array.isArray(linksArray) || linksArray.length === 0) return originalText;
 
-            // تطبيق بحد أقصى 3 روابط
             const items = linksArray.slice(0, 3);
 
             for (const item of items) {
                 const phrase = item.exact_text ? item.exact_text.trim() : null;
-                const link = item.url ? item.url.trim() : null;
+                let link = item.url ? item.url.trim() : null;
 
-                // التحقق أن الكلمة موجودة بالفعل في النص الأصلي ولم يتم ربطها مسبقاً
+                // استخراج الرابط النظيف لو تم إرجاعه مع الرابط التوضيحي
+                if (link && link.includes('===>')) {
+                    const parts = link.split('===>');
+                    link = parts[1].replace(/[()]/g, '').trim();
+                }
+
                 if (phrase && link && resultText.includes(phrase)) {
-                    if (!resultText.includes(`[${phrase}]`)) {
-                        // استبدال أول ظهور للكلمة فقط بالرابط
-                        resultText = resultText.replace(phrase, `[${phrase}](${link})`);
+                    // التحقق أن العبارة لم يتم ربطها مسبقاً وليست داخل عنوان (#)
+                    const lines = resultText.split('\n');
+                    let modified = false;
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i];
+                        // استبعاد العناوين
+                        if (line.trim().startsWith('#')) continue;
+
+                        if (line.includes(phrase) && !line.includes(`[${phrase}]`)) {
+                            lines[i] = line.replace(phrase, `[${phrase}](${link})`);
+                            modified = true;
+                            break; // ربط مرة واحدة فقط لهذه العبارة
+                        }
+                    }
+
+                    if (modified) {
+                        resultText = lines.join('\n');
                     }
                 }
             }
@@ -298,15 +342,15 @@ ${articleText}`;
                     const file = files[i];
                     const currentNum = i + 1;
                     
-                    statusText.innerText = `⏳ فحص المقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `جاري تحديد أنسب الروابط لنصوصك الأصلية...`;
+                    statusText.innerText = `🔍 تحليل السياق للمقال (${currentNum} من ${totalFiles}): ${file.name}`;
+                    logMessage.innerText = `تحديد أفضل المواضع المناسبة لنية القارئ والـ SEO...`;
 
                     const originalText = await file.text();
                     
-                    // 1. استخراج الكلمات المطابقة من الذكاء الاصطناعي فقط
+                    // 1. تحليل المقال سياقياً وفق الشروط الصارمة
                     const linksMapping = await getLinksMapping(geminiEndpoint, originalText, selectedUrls);
                     
-                    // 2. حقن الروابط داخل نصوصك أنت الحرفية برمجياً دون تعديل أي شيء آخر
+                    // 2. حقن الروابط برمجياً في الأماكن المستهدفة فقط
                     const updatedContent = injectLinksIntoOriginalText(originalText, linksMapping);
                     
                     zip.file(file.name, updatedContent);
@@ -320,7 +364,7 @@ ${articleText}`;
 
                 processedZip = zip;
                 statusText.innerText = "✅ تم الانتهاء بنجاح!";
-                logMessage.innerText = `تم حقن الروابط في ${totalFiles} مقال مع الحفاظ الكامل على نصوصك.`;
+                logMessage.innerText = `تم حقن الروابط سياقياً في ${totalFiles} مقال وفق أفضل ممارسات الـ SEO.`;
                 downloadContainer.classList.remove('hidden');
 
             } catch (err) {
@@ -336,7 +380,7 @@ ${articleText}`;
             const content = await processedZip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(content);
-            link.download = "articles_with_internal_links.zip";
+            link.download = "seo_contextual_articles.zip";
             link.click();
         }
     </script>
