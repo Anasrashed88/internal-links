@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حاقن الروابط الذكي (Long-Tail SEO Linker)</title>
+    <title>حاقن الروابط الدلالي الذكي (Semantic SEO Linker)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط بالكلمات المفتاحية الطويلة (Long-Tail)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">حقن حصري على عبارات من <span class="font-bold text-blue-600">3 كلمات فأكثر</span> لتعزيز الـ SEO الطبيعي وزيادة المبيعات</p>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🧠 حاقن الروابط بالذكاء الدلالي (Semantic SEO)</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">يربط المنتجات بسياق المعنى والمفهوم وليس بمطابقة الحروف الجامدة</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
@@ -36,7 +36,7 @@
             <div>
                 <label class="block text-sm font-semibold mb-1">🗺️ روابط خرائط الموقع (Sitemaps):</label>
                 <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة المنتجات أو الأقسام هنا:&#10;https://example.com/sitemap_products_1.xml" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
-                <span class="text-xs text-gray-500">💡 يفضل استخدام خريطة المنتجات والتصنيفات مباشرة.</span>
+                <span class="text-xs text-gray-500">💡 يفضل وضع خريطة المنتجات لربط المعاني مباشرة بصفحات الشراء.</span>
             </div>
 
             <!-- 4. رفع الملفات -->
@@ -47,7 +47,7 @@
             </div>
 
             <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 ابدأ فحص وحقن الكلمات الطويلة
+                🚀 ابدأ التحليل الدلالي وحقن المنتجات
             </button>
         </div>
 
@@ -64,14 +64,14 @@
 
             <!-- سجل مباشر للروابط المحقونة -->
             <div class="mt-4 bg-gray-50 border p-3 rounded text-xs max-h-48 overflow-y-auto">
-                <p class="font-bold text-gray-700 mb-1">📋 تقرير الكلمات المفتاحية المحقونة (3 كلمات فأكثر):</p>
+                <p class="font-bold text-gray-700 mb-1">📋 تقرير الربط الدلالي الذكي (Semantic Matches):</p>
                 <ul id="injectedReport" class="space-y-1 text-gray-600"></ul>
             </div>
         </div>
 
         <!-- صندوق التنزيل -->
         <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
-            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء بنجاح وحقن الروابط بالكلمات المفتاحية الطويلة!</h3>
+            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء بنجاح وحقن الروابط بالذكاء الدلالي!</h3>
             <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
                 📥 تحميل المقالات المعالجة (ZIP)
             </button>
@@ -208,36 +208,50 @@
 
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        async function getCommercialLinksMapping(modelEndpoint, articleText, urls) {
+        // محرك التحليل الدلالي الذكي
+        async function getSemanticLinksMapping(modelEndpoint, articleText, urls) {
+            // تجهيز الروابط بأسماء مقروءة وواضحة جداً
             const readableUrls = urls.map(u => {
                 try {
-                    return `${decodeURI(u)} ===> (${u})`;
+                    const decoded = decodeURI(u);
+                    // استخراج الكلمات المفتاحية من مسار الرابط
+                    const slug = decoded.split('/').filter(Boolean).pop().replace(/[-_]/g, ' ');
+                    return `[منتج/قسم: "${slug}"] ===> (${u})`;
                 } catch (e) {
                     return u;
                 }
             }).join('\n');
 
-            const prompt = `أنت خبير محترف في الـ On-Page SEO واستراتيجيات الكلمات المفتاحية طويلة الذيل (Long-Tail Keywords).
+            const prompt = `أنت خبير محترف في هندسة الروابط الداخلية الدلالية لمواقع التجارة الإلكترونية (Semantic E-Commerce Link Architect).
 
-الهدف:
-اختر من (1 إلى 3 روابط) من قائمة المنتجات والأقسام، وحدد الكلمات المفتاحية المطابقة داخل المقال.
+المفهوم الأساسي لمهمتك (الربط الدلالي وليس المطابقة الحرفية):
+- لست آلة تبحث عن كلمة مكررة حرفياً، بل خبير يفهم "المعنى والسياق التجاري".
+- اسم المنتج في المتجر قد يكون: "مروكي مدهال عود الملكي" أو "عود مروكي دقة فاخر".
+- الكاتب في المقال قد لا يذكر هذا الاسم الطويل بالضبط، بل قد يصفه بجمل مثل: "سيد المجالس وملك المناسبات"، "خيار المناسبات الأول في الخليج"، "أرقى أنواع المروكي في بابوا"، أو "نكهته البخورية الباردة".
+- مهمتك هي: الربط بين "المعنى والمفهوم والمناسبة" في المقال، وبين "المنتج الأنسب له" في المتجر!
 
-⚠️ شرط إجباري وحاسم لطول نص الرابط (Long-Tail Rule):
-1. **الحد الأدنى 3 كلمات:** يجب أن يتكون نص الرابط (exact_text) من **3 كلمات على الأقل** (من 3 إلى 6 كلمات).
-   - ❌ ممنوع منعاً باتاً: كلمة واحدة أو كلمتان مثل: "العود المروكي" أو "العود المحسن".
-   - ✔️ المقبول والصحيح فقط: عبارة كاملة مثل: "أفضل أنواع العود المروكي" أو "خشب العود المروكي الطبيعي" أو "استخدام العود المروكي المحسن".
-2. **الأولوية التجارية:** صفحات المنتجات والتصنيفات لها الأولوية القصوى لزيادة المبيعات.
-3. **المطابقة الحرفية:** العبارة المختارة في exact_text يجب أن تكون منسوخة حرفياً كما هي في المقال الأصلي.
+القواعد الصارمة:
+1. **طول نص الرابط (Long-Tail 3+ Words):**
+   - العبارة المختارة في "exact_text" يجب أن تتكون من **3 كلمات على الأقل** (من 3 إلى 6 كلمات).
+   - ❌ تجنب الكلمات القصيرة (مثل: "العود المروكي" فقط).
+   - ✔️ اختر عبارة سياقية ثرية تعبر عن المفهوم (مثال: "خيار المناسبات الأول في الخليج" أو "نكهته البخورية الباردة وفوحانه الهادئ" أو "مروكي الغابات القديمة الطبيعي").
+2. **المطابقة من داخل النص:**
+   - يجب أن تكون العبارة المختارة منسوخة حرفياً كما هي موجودة داخل نص المقال الأصلي دون أي تحريف.
+3. **أولوية المنتجات والأقسام:**
+   - وجّه القارئ دائماً لصفحة المنتج أو القسم لزيادة الشراء، وتجنب روابط المدونات العامة.
+4. **العدد:**
+   - اختر من (1 إلى 3 روابط دلالية ذكية جداً).
 
-أرجع النتيجة حصراً بصيغة JSON Array بدون أي مقدمات:
+أرجع النتيجة حصراً بصيغة JSON Array بدون أي مقدمات أو علامات إضافية:
 [
   {
-    "exact_text": "عبارة طويلة من 3 كلمات فأكثر منسوخة حرفياً",
-    "url": "رابط المنتج أو التصنيف المطابق"
+    "exact_text": "عبارة دلالية من 3 كلمات فأكثر منسوخة حرفياً من المقال",
+    "url": "رابط المنتج أو القسم الأنسب لها دلالياً",
+    "reason": "سبب الربط باختصار"
   }
 ]
 
-قائمة الروابط:
+قائمة منتجات وأقسام المتجر المتاحة:
 ${readableUrls}
 
 نص المقال:
@@ -248,7 +262,7 @@ ${articleText}`;
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.1 }
+                    generationConfig: { temperature: 0.2 }
                 })
             });
 
@@ -285,7 +299,7 @@ ${articleText}`;
 
             if (!Array.isArray(linksArray) || linksArray.length === 0) {
                 const li = document.createElement('li');
-                li.innerText = `⚠️ ${fileName}: لم يتم العثور على عبارات طويلة مناسبة.`;
+                li.innerText = `⚠️ ${fileName}: لم يتم العثور على روابط متطابقة دلالياً.`;
                 reportList.appendChild(li);
                 return originalText;
             }
@@ -296,6 +310,7 @@ ${articleText}`;
             for (const item of items) {
                 let phrase = item.exact_text ? item.exact_text.trim() : null;
                 let link = item.url ? item.url.trim() : null;
+                let reason = item.reason ? item.reason : "";
 
                 if (link && link.includes('===>')) {
                     link = link.split('===>')[1].replace(/[()]/g, '').trim();
@@ -304,22 +319,16 @@ ${articleText}`;
                 if (phrase && link) {
                     phrase = phrase.replace(/^[«"'\s]+|[»"'\s.,:;،؟!-]+$/g, '').trim();
 
-                    // 🛑 صمام الأمان البرمجي: التأكد من أن العبارة تحتوي على 3 كلمات على الأقل
                     const wordCount = phrase.split(/\s+/).filter(Boolean).length;
-                    if (wordCount < 3) {
-                        const li = document.createElement('li');
-                        li.innerHTML = `⚠️ <b>${fileName}</b>: تم تجاهل العبارة <i>"${phrase}"</i> لأنها قصيرة (${wordCount} كلمات فقط). المطلوب 3 فأكثر.`;
-                        reportList.appendChild(li);
-                        continue;
-                    }
+                    if (wordCount < 3) continue;
 
-                    // 1. محاولة المطابقة المباشرة
+                    // 1. تجربة المطابقة المباشرة
                     if (resultText.includes(phrase) && !resultText.includes(`[${phrase}]`)) {
                         resultText = resultText.replace(phrase, `[${phrase}](${link})`);
                         injectedCount++;
 
                         const li = document.createElement('li');
-                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${phrase}"</i> (${wordCount} كلمات) 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
+                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${phrase}"</i> (${wordCount} كلمات) 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a> ${reason ? `<span class="text-gray-400 text-xs">(${reason})</span>` : ''}`;
                         reportList.appendChild(li);
                         continue;
                     }
@@ -334,7 +343,7 @@ ${articleText}`;
                         injectedCount++;
 
                         const li = document.createElement('li');
-                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${originalWordInDoc}"</i> (${wordCount} كلمات - مطابقة ذكية) 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
+                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${originalWordInDoc}"</i> (${wordCount} كلمات - ذكاء دلالي) 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
                         reportList.appendChild(li);
                     }
                 }
@@ -342,7 +351,7 @@ ${articleText}`;
 
             if (injectedCount === 0) {
                 const li = document.createElement('li');
-                li.innerText = `⚠️ ${fileName}: لم يتم حقن أي رابط (لم تتطابق الشروط أو الكلمات المقترحة).`;
+                li.innerText = `⚠️ ${fileName}: لم تنطبق شروط الطول أو المطابقة على الروابط المقترحة.`;
                 reportList.appendChild(li);
             }
 
@@ -381,7 +390,7 @@ ${articleText}`;
             
             progressBar.style.width = '0%';
             progressPercent.innerText = '0%';
-            statusText.innerText = "⏳ جاري استخراج صفحات المنتجات والتصنيفات من الـ Sitemap...";
+            statusText.innerText = "⏳ جاري استخراج وتحليل صفحات المنتجات دلالياً...";
             logMessage.innerText = "";
 
             try {
@@ -407,11 +416,11 @@ ${articleText}`;
                     const file = files[i];
                     const currentNum = i + 1;
                     
-                    statusText.innerText = `🔍 فحص العبارات الطويلة للمقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `جاري تحديد عبارات مفتاحية من 3 كلمات فأكثر...`;
+                    statusText.innerText = `🧠 تحليل المعاني الدلالية للمقال (${currentNum} من ${totalFiles}): ${file.name}`;
+                    logMessage.innerText = `مطابقة المفاهيم والعبارات الطويلة مع أنسب المنتجات...`;
 
                     const originalText = await file.text();
-                    const linksMapping = await getCommercialLinksMapping(geminiEndpoint, originalText, selectedUrls);
+                    const linksMapping = await getSemanticLinksMapping(geminiEndpoint, originalText, selectedUrls);
                     const updatedContent = injectLinksIntoOriginalText(originalText, linksMapping, file.name);
                     
                     zip.file(file.name, updatedContent);
@@ -425,7 +434,7 @@ ${articleText}`;
 
                 processedZip = zip;
                 statusText.innerText = "✅ تم الانتهاء بنجاح!";
-                logMessage.innerText = `تم حقن المقالات بكلمات مفتاحية طويلة الذيل حصراً (3 كلمات فأكثر).`;
+                logMessage.innerText = `تم الربط الدلالي بنجاح بالاعتماد على سياق المعاني وعبارات 3 كلمات فأكثر.`;
                 downloadContainer.classList.remove('hidden');
 
             } catch (err) {
@@ -441,7 +450,7 @@ ${articleText}`;
             const content = await processedZip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(content);
-            link.download = "longtail_seo_articles.zip";
+            link.download = "semantic_seo_articles.zip";
             link.click();
         }
     </script>
