@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة SEO المتكاملة (حقن الروابط & كاتب المقالات E-E-A-T)</title>
+    <title>منصة SEO الشاملة (حقن الروابط & مقالات E-E-A-T متقدمة)</title>
+    <!-- مكتبات التنسيق والملفات -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- مكتبة تحويل Markdown إلى HTML -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+    <!-- مكتبة تصدير PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-3 md:p-8">
     <div class="max-w-4xl mx-auto bg-white p-5 md:p-8 rounded-2xl shadow-lg">
@@ -13,7 +18,7 @@
         <!-- رأس الصفحة والإعدادات المشتركة -->
         <div class="text-center mb-6">
             <h1 class="text-2xl md:text-3xl font-extrabold text-blue-700">🚀 منصة الـ SEO والتجارة الإلكترونية المتكاملة</h1>
-            <p class="text-xs md:text-sm text-gray-500 mt-1">حقن الروابط الداخلية السياقية + كتابة مقالات E-E-A-T شاملة مدعومة ببحث Google</p>
+            <p class="text-xs md:text-sm text-gray-500 mt-1">حقن الروابط الداخلية + كتابة مقالات E-E-A-T تلقائية مع مصادر حقيقية وتصدير (TXT / HTML / PDF)</p>
         </div>
 
         <!-- الإعدادات العامة (المفتاح والموديل) -->
@@ -28,7 +33,7 @@
             <div>
                 <label class="block text-xs font-bold text-gray-700 mb-1">🤖 الموديل المعتمد:</label>
                 <select id="modelSelect" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-xs font-mono">
-                    <option value="models/gemini-3.1-flash-lite" selected>⚡ models/gemini-3.1-flash-lite (سريع ومثالي)</option>
+                    <option value="models/gemini-3.1-flash-lite" selected>⚡ models/gemini-3.1-flash-lite (افتراضي)</option>
                 </select>
             </div>
         </div>
@@ -44,7 +49,7 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- التبويب الأول: حقن الروابط الداخلية (الأداة السابقة) -->
+        <!-- التبويب الأول: حقن الروابط الداخلية الجماعي -->
         <!-- ========================================== -->
         <div id="tabLinker" class="space-y-4">
             <div>
@@ -62,7 +67,6 @@
                 🚀 ابدأ فحص وحقن الروابط الداخلية
             </button>
 
-            <!-- صندوق التقدم للتبويب 1 -->
             <div id="statusContainerLinker" class="mt-4 hidden">
                 <div class="flex justify-between text-xs font-semibold mb-1">
                     <span id="statusTextLinker">جاري المعالجة...</span>
@@ -80,7 +84,7 @@
             <div id="downloadContainerLinker" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
                 <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء وحقن جميع المقالات!</h3>
                 <button onclick="downloadZipLinker()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
-                    📥 تحميل المقالات المحقونة (ZIP)
+                    📥 تحميل المقالات المحقونة (ZIP - TXT)
                 </button>
             </div>
         </div>
@@ -89,33 +93,37 @@
         <!-- التبويب الثاني: كاتب مقالات E-E-A-T الشاملة -->
         <!-- ========================================== -->
         <div id="tabWriter" class="space-y-5 hidden">
-            <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-xs text-blue-900 leading-relaxed">
-                💡 <b>كيف يعمل كاتب المقالات؟</b> يتم استخراج أقسام ومنتجات متجرك من خريطة الموقع، ثم يقترح لك 30 فكرة مقال مدروسة للـ SEO ومبنية على بحث Google المباشر مع المصادر والأسئلة الشائعة.
-            </div>
-
-            <!-- إدخال خريطة الموقع أو رابط المتجر -->
-            <div>
-                <label class="block text-sm font-semibold mb-1">🌐 رابط خريطة موقع المتجر (Sitemap URL):</label>
-                <div class="flex gap-2">
+            <!-- خيارات المتجر واللغة -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">🌐 رابط خريطة موقع المتجر (Sitemap URL):</label>
                     <input type="url" id="writerStoreSitemap" placeholder="https://examplestore.com/sitemap.xml" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm">
-                    <button onclick="generateArticleIdeas()" id="btnGenerateIdeas" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-xs whitespace-nowrap transition">
-                        💡 توليد 30 فكرة مقال
-                    </button>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">🌐 لغة كتابة المقالات:</label>
+                    <select id="articleLang" class="w-full border p-2 rounded focus:outline-blue-500 bg-white text-sm font-semibold">
+                        <option value="ar" selected>🇸🇦 العربية (Arabic)</option>
+                        <option value="en">🇺🇸 English (الإنجليزية)</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- خيار تفعيل Google Search Grounding -->
-            <div class="flex items-center gap-2 bg-gray-50 p-2.5 rounded border border-gray-200">
-                <input type="checkbox" id="enableGoogleSearch" checked class="w-4 h-4 text-blue-600 rounded">
-                <label for="enableGoogleSearch" class="text-xs font-semibold text-gray-700 cursor-pointer">
-                    🔍 تفعيل البحث في Google تلقائياً للتحقق من المصادر وأحدث المعلومات (Google Search Grounding)
-                </label>
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 p-3 rounded-lg border">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="enableGoogleSearch" checked class="w-4 h-4 text-blue-600 rounded">
+                    <label for="enableGoogleSearch" class="text-xs font-semibold text-gray-700 cursor-pointer">
+                        🔍 تفعيل بحث Google المباشر لجلب الحقائق والمصادر الموثوقة (Search Grounding)
+                    </label>
+                </div>
+                <button onclick="generateArticleIdeas()" id="btnGenerateIdeas" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold text-xs transition">
+                    💡 توليد 30 فكرة مقال
+                </button>
             </div>
 
-            <!-- قائمة الاقتراحات (تظهر بعد التوليد) -->
+            <!-- قائمة الاقتراحات الـ 30 -->
             <div id="ideasContainer" class="hidden border border-gray-200 p-4 rounded-xl bg-gray-50">
                 <div class="flex flex-wrap justify-between items-center mb-3 pb-2 border-b gap-2">
-                    <span class="font-bold text-sm text-gray-800">📋 اختر المقالات المطلوب كتابتها:</span>
+                    <span class="font-bold text-sm text-gray-800">📋 اختر المقالات المطلوب كتابتها وحقنها:</span>
                     <div class="flex gap-2 text-xs">
                         <button onclick="toggleSelectAllIdeas(true)" class="text-blue-600 hover:underline font-semibold">تحديد الكل (30)</button>
                         <span class="text-gray-300">|</span>
@@ -128,11 +136,11 @@
                 <div id="ideasList" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-72 overflow-y-auto p-1 text-xs"></div>
 
                 <button onclick="startWritingSelectedArticles()" id="btnStartWriting" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition text-sm">
-                    ✍️ ابدأ كتابة المقالات المحددة الآن
+                    ✍️ ابدأ كتابة المقالات + حقن الروابط الداخلية تلقائياً
                 </button>
             </div>
 
-            <!-- صندوق تقدم كتابة المقالات -->
+            <!-- صندوق التقدم للتبويب 2 -->
             <div id="statusContainerWriter" class="hidden space-y-3">
                 <div class="flex justify-between text-xs font-semibold">
                     <span id="statusTextWriter">جاري تجهيز المقالات...</span>
@@ -144,34 +152,46 @@
                 <div id="writerLogMessage" class="text-xs text-gray-500"></div>
             </div>
 
-            <!-- صندوق المقالات الناتجة والمعاينة والتنزيل -->
+            <!-- صندوق النتائج وأزرار التنزيل الشاملة (TXT / HTML / PDF) -->
             <div id="articlesResultContainer" class="hidden space-y-4">
-                <div class="flex justify-between items-center bg-green-100 border border-green-300 p-3 rounded-lg">
-                    <span class="font-bold text-xs md:text-sm text-green-800">🎉 تم الانتهاء من كتابة المقالات المحددة!</span>
-                    <div class="flex gap-2">
-                        <button onclick="downloadAllArticlesZip()" class="bg-green-700 hover:bg-green-800 text-white text-xs px-3 py-1.5 rounded font-bold transition">
-                            📦 تحميل الكل (ZIP)
+                <div class="bg-green-50 border border-green-200 p-4 rounded-xl flex flex-wrap justify-between items-center gap-3">
+                    <div>
+                        <h3 class="font-bold text-green-900 text-sm">🎉 اكتملت كتابة المقالات وحقن الروابط بنجاح!</h3>
+                        <p class="text-xs text-green-700">تتضمن روابط داخلية، مصادر خارجية موثوقة، وأسئلة شائعة (FAQ).</p>
+                    </div>
+                    <!-- أزرار التنزيل الجماعي -->
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <button onclick="downloadAllArticlesZip('txt')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded font-bold transition">
+                            📦 تحميل الكل (TXT)
                         </button>
-                        <button onclick="regenerateAllArticles()" class="bg-gray-700 hover:bg-gray-800 text-white text-xs px-3 py-1.5 rounded transition">
+                        <button onclick="downloadAllArticlesZip('html')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded font-bold transition">
+                            🌐 تحميل الكل (HTML)
+                        </button>
+                        <button onclick="downloadAllArticlesZip('pdf')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded font-bold transition">
+                            📄 تحميل الكل (PDF)
+                        </button>
+                        <button onclick="regenerateAllArticles()" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded transition">
                             🔄 إعادة كتابة الكل
                         </button>
                     </div>
                 </div>
 
-                <!-- قائمة المقالات المولدة للمعاينة والتحميل الفردي -->
+                <!-- قائمة المقالات المولدة للمعاينة والتنزيل الفردي -->
                 <div id="generatedArticlesList" class="space-y-3"></div>
             </div>
         </div>
 
     </div>
 
-    <script>
-        // المتغيرات العامة
-        let processedZipLinker = null;
-        let generatedArticlesData = []; // تخزين المقالات المولدة
-        let currentIdeas = []; // تخزين الاقتراحات الـ 30
+    <!-- حاوية خفية لمعالجة وتصدير الـ PDF -->
+    <div id="pdfRenderContainer" class="hidden"></div>
 
-        // التبديل بين التبويبات
+    <script>
+        let processedZipLinker = null;
+        let generatedArticlesData = [];
+        let currentIdeas = [];
+        let cachedStoreUrls = [];
+
         function switchTab(tab) {
             const btnLinker = document.getElementById('tabBtnLinker');
             const btnWriter = document.getElementById('tabBtnWriter');
@@ -188,7 +208,6 @@
                 tabWriter.classList.remove('hidden');
                 btnWriter.className = "flex-1 py-3 font-bold text-sm text-blue-600 border-b-2 border-blue-600 transition";
                 btnLinker.className = "flex-1 py-3 font-bold text-sm text-gray-500 hover:text-blue-600 border-b-2 border-transparent transition";
-                // مزامنة رابط الخريطة تلقائياً
                 const sitemap = document.getElementById('sitemapUrls').value.trim();
                 if (sitemap && !document.getElementById('writerStoreSitemap').value) {
                     document.getElementById('writerStoreSitemap').value = sitemap.split('\n')[0];
@@ -235,7 +254,6 @@
             } catch (e) {}
         }
 
-        // البروكسي واستخراج الروابط
         async function fetchXmlWithProxy(url) {
             const proxies = [
                 (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
@@ -282,13 +300,12 @@
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
         // ==========================================
-        // دوال التبويب الثاني: كاتب مقالات E-E-A-T
+        // التبويب 2: توليد الأفكار والمقالات
         // ==========================================
-
-        // 1. توليد 30 فكرة مقال
         async function generateArticleIdeas() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const sitemapUrl = document.getElementById('writerStoreSitemap').value.trim();
+            const lang = document.getElementById('articleLang').value;
             const btn = document.getElementById('btnGenerateIdeas');
             const ideasContainer = document.getElementById('ideasContainer');
             const ideasList = document.getElementById('ideasList');
@@ -300,11 +317,11 @@
             localStorage.setItem('saved_sitemaps', sitemapUrl);
 
             btn.disabled = true;
-            btn.innerText = "⏳ جاري تحليل المتجر وتوليد 30 فكرة...";
+            btn.innerText = "⏳ جاري فحص خريطة المتجر...";
 
             try {
-                const urls = await extractUrlsFromSitemap(sitemapUrl);
-                const sampleUrls = urls.slice(0, 100).map(u => {
+                cachedStoreUrls = await extractUrlsFromSitemap(sitemapUrl);
+                const sampleUrls = cachedStoreUrls.slice(0, 150).map(u => {
                     try { return decodeURI(u); } catch(e) { return u; }
                 }).join('\n');
 
@@ -312,25 +329,35 @@
                 if (!selectedModel.startsWith('models/')) selectedModel = 'models/' + selectedModel;
                 const endpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
 
-                const prompt = `أنت خبير استراتيجي في تسويق المحتوى وبناء سلطة المواقع (Topic Clusters & E-E-A-T SEO Strategist).
-
-أمامك عينة من روابط وصفحات المتجر الإلكتروني:
+                const isAr = lang === 'ar';
+                const prompt = isAr ? 
+`أنت خبير استراتيجي في تسويق المحتوى والتجارة الإلكترونية (E-E-A-T Content Strategist).
+إليك عينة من روابط وصفحات المتجر:
 ${sampleUrls}
 
 المطلوب:
-1. افهم تخصص المتجر، منتجاته، فئاته، والجمهور المستهدف.
-2. اقترح قائمة مكونة من 30 عنوان مقال حصري ومختلف تماماً.
-3. معايير الأفكار:
-   - مواضيع تثقيفية عميقة يبحث عنها العملاء المحتملون في Google (Search Intent).
-   - عناوين مقالات تجيب عن مشاكل، أسرار، مقارنات، أدلة شراء، واستخدامات احترافية.
-   - متنوعة وموزعة على مختلف أقسام ومنتجات المتجر.
-
-أرجع النتيجة حصراً كمصفوفة JSON تحتوي على 30 سلسلة نصية (Titles) فقط بدون أي نصوص قبلها أو بعدها:
+1. افهم تخصص المتجر وجمهوره بدقة.
+2. اقترح 30 فكرة مقال تثقيفية وحصرية تجيب على أسئلة ومشاكل العملاء (أدلة شراء، مقارنات، أسرار اختيار، نصائح احترافية).
+3. أرجع النتيجة حصراً كمصفوفة JSON تحتوي على 30 عنوان مقال:
 [
   "عنوان المقال 1",
   "عنوان المقال 2",
   ...
   "عنوان المقال 30"
+]` :
+`You are an expert E-Commerce SEO and Content Strategist.
+Here is a sample of the store's URLs and products:
+${sampleUrls}
+
+Task:
+1. Understand the store niche, products, and target audience.
+2. Suggest 30 comprehensive, educational article titles that address buyer search intent (buying guides, comparisons, tips, FAQs).
+3. Return ONLY a valid JSON array of 30 string titles:
+[
+  "Article Title 1",
+  "Article Title 2",
+  ...
+  "Article Title 30"
 ]`;
 
                 const res = await fetch(endpoint, {
@@ -349,7 +376,6 @@ ${sampleUrls}
                 raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
                 currentIdeas = JSON.parse(raw);
 
-                // عرض الاقتراحات
                 ideasList.innerHTML = "";
                 currentIdeas.forEach((idea, idx) => {
                     const div = document.createElement('div');
@@ -362,7 +388,7 @@ ${sampleUrls}
                 });
 
                 ideasContainer.classList.remove('hidden');
-                toggleSelectAllIdeas(true); // تحديد الكل افتراضياً
+                toggleSelectAllIdeas(true);
 
             } catch (err) {
                 alert("❌ حدث خطأ أثناء توليد الأفكار: " + err.message);
@@ -373,41 +399,48 @@ ${sampleUrls}
         }
 
         function toggleSelectAllIdeas(select) {
-            const checkboxes = document.querySelectorAll('.idea-checkbox');
-            checkboxes.forEach(cb => cb.checked = select);
+            document.querySelectorAll('.idea-checkbox').forEach(cb => cb.checked = select);
         }
 
-        // 2. كتابة المقال الفردي بنمط E-E-A-T
-        async function generateSingleEEATArticle(topic, apiKey, selectedModel, enableSearch) {
-            let endpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
+        // كتابة مقال E-E-A-T باللغة المختارة مع بحث Google ومصادر حقيقية
+        async function generateSingleEEATArticle(topic, apiKey, selectedModel, enableSearch, lang) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
+            const isAr = lang === 'ar';
 
-            const prompt = `أنت كاتب محتوى بشري خبير، باحث متخصص، وكاتب مقالات متوافق مع معايير E-E-A-T (الخبرة، التجربة، الموثوقية، والمصداقية).
-
-الموضوع المطلوب كتابة مقال تفصيلي كامل عنه:
+            const prompt = isAr ?
+`أنت كاتب مقالات محترف وباحث متخصص يعمل بأعلى معايير E-E-A-T (الخبرة، التجربة، الموثوقية، والمصداقية).
+اكتب مقالاً شاملاً، عميقاً، وبأسلوب بشري 100% عن:
 "${topic}"
 
-شروط الكتابة الصارمة (أسلوب بشري 100%):
-1. **الأسلوب البشري:**
-   - اكتب بلغة عربية فصيحة، ثرية، وسلسة بدون كليشيهات الذكاء الاصطناعي (ممنوع تماماً عبارات مثل: "في عالمنا المعاصر"، "مما لا شك فيه"، "يلعب دوراً حاسماً"، "في الختام يمكن القول").
-   - استخدم أسلوب المتحدث الخبير والمجرب الذي يشارك نصائح ميدانية حقيقية للقارئ.
-2. **الشمولية والطول:**
-   - مقال تثقيفي شامل، عميق، مقسم إلى عناوين رئيسية وفرعية (H1, H2, H3).
-   - تغطية الجوانب العملية، معايير الجودة، الاستخدامات الصحيحة، وأخطاء شائعة يجب تجنبها.
-3. **الدقة والحقائق والبحث المباشر:**
-   - ابحث في Google عن أحدث الحقائق، البيانات، والأسعار أو المعلومات العلمية والميدانية الموثقة.
-4. **قسم الأسئلة الشائعة (FAQ):**
-   - أدرج قسماً مخصصاً يحتوي على 3 إلى 5 أسئلة شائعة حقيقية يسألها المهتمون بالموضوع مع إجابات مباشرة ومفيدة.
-5. **قسم المصادر والمراجع (Real Sources):**
-   - أدرج في نهاية المقال قسماً باسم "المصادر والمراجع" يحتوي على أسماء جهات أو مصادر موثوقة وروابط حقيقية تم الاستناد إليها.
+شروط صارمة:
+1. **الأسلوب البشري الطبيعي:** تجنب كليشيهات الذكاء الاصطناعي تماماً (مثل: "في عالمنا المعاصر"، "مما لا شك فيه"، "يلعب دوراً حاسماً"، "في الختام"). اكتب بنبرة خبير يشارك تجاربه ونصائحه بصدق.
+2. **الشمولية والهيكل:** قسم المقال بعناوين H2 و H3 متناسقة، تغطي التفاصيل العملية، معايير الجودة، وحلول المشاكل.
+3. **قسم الأسئلة الشائعة (FAQ):** خصص قسماً يحتوي على 3-5 أسئلة شائعة حقيقية مع إجابات دقيقة ومباشرة.
+4. **قسم المصادر والمراجع (Real Clickable Sources):**
+   - أدرج قسماً في النهاية بعنوان: "## المصادر والمراجع"
+   - يجب أن يتضمن أسماء المصادر الحقيقية وروابطها المباشرة النشطة الصالحة (مثل: [اسم المرجع أو الدراسة](https://example.com/source)) التي تم الاستناد إليها عبر البحث.
 
-اكتب المقال كاملاً بتنسيق Markdown الجاهز للنشر مباشرة.`;
+اكتب المقال كاملاً بتنسيق Markdown الواضح.`
+:
+`You are an expert human researcher and authoritative writer specializing in high-standard E-E-A-T content.
+Write a comprehensive, in-depth, 100% human-sounding article on:
+"${topic}"
+
+Strict Guidelines:
+1. **Human Tone:** Absolutely no AI clichés (avoid phrases like "In today's fast-paced world", "It is important to note", "Plays a crucial role", "In conclusion"). Write with authoritative first-hand experience and clarity.
+2. **Structure:** Well-organized H2 and H3 headings covering practical advice, quality criteria, and problem-solving steps.
+3. **FAQ Section:** Include a dedicated section with 3-5 real frequently asked questions and concise answers.
+4. **Real Clickable Sources:**
+   - Include a final section titled: "## Sources & References"
+   - Provide genuine reference names and actual clickable URLs (e.g., [Source Name](https://real-source.com/article)) verified through search.
+
+Output the complete article in clean Markdown.`;
 
             let requestBody = {
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.4 }
+                generationConfig: { temperature: 0.3 }
             };
 
-            // تفعيل Google Search Grounding عند الطلب
             if (enableSearch) {
                 requestBody.tools = [{ "google_search": {} }];
             }
@@ -422,7 +455,6 @@ ${sampleUrls}
                 if (data.error) throw new Error(data.error.message);
                 return data.candidates[0].content.parts[0].text;
             } catch (err) {
-                // في حال رفض النموذج البحث أو حدث تعارض، نجري محاولة بدون أداة البحث كخيار احتياطي
                 if (enableSearch) {
                     delete requestBody.tools;
                     const fallbackRes = await fetch(endpoint, {
@@ -438,14 +470,15 @@ ${sampleUrls}
             }
         }
 
-        // 3. معالجة وكتابة المقالات المحددة
+        // كتابة وحقن الروابط تلقائياً في المقالات المختارة
         async function startWritingSelectedArticles() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const checkboxes = document.querySelectorAll('.idea-checkbox:checked');
             const enableSearch = document.getElementById('enableGoogleSearch').checked;
+            const lang = document.getElementById('articleLang').value;
 
             if (!apiKey) return alert("يرجى إدخال مفتاح API أولاً.");
-            if (checkboxes.length === 0) return alert("يرجى تحديد مقال واحد على الأقل لكتابته.");
+            if (checkboxes.length === 0) return alert("يرجى اختيار مقال واحد على الأقل.");
 
             const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.value));
             const selectedTopics = selectedIndices.map(idx => currentIdeas[idx]);
@@ -466,59 +499,81 @@ ${sampleUrls}
             resultContainer.classList.add('hidden');
             generatedArticlesData = [];
 
+            // التأكد من توفر روابط المتجر للحقن التلقائي
+            if (cachedStoreUrls.length === 0) {
+                const sitemapUrl = document.getElementById('writerStoreSitemap').value.trim();
+                if (sitemapUrl) cachedStoreUrls = await extractUrlsFromSitemap(sitemapUrl);
+            }
+            const storeUrlsForLinking = cachedStoreUrls.slice(0, 500);
+
             const total = selectedTopics.length;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
 
             for (let i = 0; i < total; i++) {
                 const topic = selectedTopics[i];
                 const currentNum = i + 1;
                 const pct = Math.round((currentNum / total) * 100);
 
-                statusText.innerText = `✍️ جاري كتابة المقال (${currentNum} من ${total}): ${topic}`;
-                logMsg.innerText = enableSearch ? "🔍 البحث في Google وتأكيد المصادر وصياغة أسلوب E-E-A-T..." : "جاري الصياغة والتحرير...";
+                statusText.innerText = `✍️ (${currentNum} من ${total}): جاري كتابة "${topic}"...`;
+                logMsg.innerText = "🔍 البحث في Google وتوثيق المصادر وصياغة أسلوب E-E-A-T...";
                 progressBar.style.width = `${pct}%`;
                 progressPercent.innerText = `${pct}%`;
 
                 try {
-                    const articleContent = await generateSingleEEATArticle(topic, apiKey, selectedModel, enableSearch);
+                    // 1. كتابة المقال
+                    let articleText = await generateSingleEEATArticle(topic, apiKey, selectedModel, enableSearch, lang);
+
+                    // 2. حقن الروابط الداخلية تلقائياً إذا توفرت روابط المتجر
+                    if (storeUrlsForLinking.length > 0) {
+                        logMsg.innerText = "🔗 جاري حقن الروابط الداخلية للمتجر سياقياً...";
+                        const linksMapping = await getUniversalLinksMapping(endpoint, articleText, storeUrlsForLinking);
+                        articleText = injectLinksIntoOriginalText(articleText, linksMapping, topic, false);
+                    }
+
                     generatedArticlesData.push({
                         title: topic,
-                        content: articleContent
+                        content: articleText,
+                        lang: lang
                     });
                 } catch (err) {
-                    console.error("خطأ في كتابة مقال:", topic, err);
+                    console.error(err);
                     generatedArticlesData.push({
                         title: topic,
-                        content: `⚠️ تعذر توليد المقال بسبب خطأ: ${err.message}`
+                        content: `⚠️ Error writing article: ${err.message}`,
+                        lang: lang
                     });
                 }
 
-                if (i < total - 1) await sleep(1500); // فاصل زمني لتفادي حدود الطلبات
+                if (i < total - 1) await sleep(1500);
             }
 
-            statusText.innerText = "✅ اكتملت كتابة جميع المقالات المحددة بنجاح!";
+            statusText.innerText = "✅ تم الانتهاء بنجاح من كتابة المقالات وحقن روابط المتجر!";
             btn.disabled = false;
             renderGeneratedArticles();
             resultContainer.classList.remove('hidden');
         }
 
-        // عرض المقالات في واجهة المعاينة
+        // عرض المقالات في الواجهة
         function renderGeneratedArticles() {
             const container = document.getElementById('generatedArticlesList');
             container.innerHTML = "";
 
             generatedArticlesData.forEach((art, idx) => {
+                const isRtl = art.lang === 'ar';
                 const item = document.createElement('div');
                 item.className = "border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm";
                 item.innerHTML = `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 border-b cursor-pointer" onclick="toggleArticleAccordion(${idx})">
+                    <div class="flex flex-wrap justify-between items-center p-3 bg-gray-50 border-b gap-2 cursor-pointer" onclick="toggleArticleAccordion(${idx})">
                         <span class="font-bold text-xs md:text-sm text-gray-800">📄 ${art.title}</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="event.stopPropagation(); downloadSingleArticle(${idx})" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2.5 py-1 rounded">💾 تنزيل</button>
-                            <button onclick="event.stopPropagation(); regenerateSingleArticle(${idx})" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2.5 py-1 rounded">🔄 إعادة توليد</button>
-                            <span id="accIcon_${idx}" class="text-xs text-gray-400">▼</span>
+                        <div class="flex flex-wrap items-center gap-1.5" onclick="event.stopPropagation()">
+                            <button onclick="downloadSingleArticle(${idx}, 'txt')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded font-semibold">💾 TXT</button>
+                            <button onclick="downloadSingleArticle(${idx}, 'html')" class="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1 rounded font-semibold">🌐 HTML</button>
+                            <button onclick="downloadSingleArticle(${idx}, 'pdf')" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded font-semibold">📄 PDF</button>
+                            <button onclick="regenerateSingleArticle(${idx})" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded">🔄 إعادة كتابة</button>
+                            <span id="accIcon_${idx}" class="text-xs text-gray-400 ml-1">▼</span>
                         </div>
                     </div>
-                    <div id="accBody_${idx}" class="p-4 text-xs font-mono bg-gray-50 hidden max-h-72 overflow-y-auto whitespace-pre-wrap leading-relaxed">${escapeHtml(art.content)}</div>
+                    <div id="accBody_${idx}" class="p-4 text-xs font-mono bg-gray-50 hidden max-h-72 overflow-y-auto whitespace-pre-wrap leading-relaxed ${isRtl ? 'text-right' : 'text-left'}" dir="${isRtl ? 'rtl' : 'ltr'}">${escapeHtml(art.content)}</div>
                 `;
                 container.appendChild(item);
             });
@@ -542,61 +597,165 @@ ${sampleUrls}
             return div.innerHTML;
         }
 
-        // تنزيل مقال فردي
-        function downloadSingleArticle(idx) {
+        // ==========================================
+        // أدوات التصدير والتحميل (TXT / HTML / PDF)
+        // ==========================================
+
+        // توليد قالب HTML كامل وأنيق
+        function generateStyledHtml(title, markdownContent, lang) {
+            const isRtl = lang === 'ar';
+            const parsedHtml = marked.parse(markdownContent);
+            return `<!DOCTYPE html>
+<html lang="${lang}" dir="${isRtl ? 'rtl' : 'ltr'}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.8; color: #2d3748; max-width: 850px; margin: 40px auto; padding: 0 20px; background-color: #fff; }
+        h1 { color: #1a365d; font-size: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 24px; }
+        h2 { color: #2b6cb0; font-size: 1.5rem; margin-top: 32px; margin-bottom: 16px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
+        h3 { color: #2d3748; font-size: 1.2rem; margin-top: 24px; margin-bottom: 12px; }
+        p { margin-bottom: 16px; font-size: 1.05rem; }
+        ul, ol { margin-bottom: 20px; padding-${isRtl ? 'right' : 'left'}: 24px; }
+        li { margin-bottom: 8px; }
+        a { color: #3182ce; text-decoration: underline; font-weight: 500; }
+        a:hover { color: #2b6cb0; }
+        blockquote { border-${isRtl ? 'right' : 'left'}: 4px solid #4299e1; padding: 12px 20px; background-color: #ebf8ff; margin: 20px 0; border-radius: 4px; }
+        code { background-color: #edf2f7; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    ${parsedHtml}
+</body>
+</html>`;
+        }
+
+        // تنزيل مقال فردي (TXT / HTML / PDF)
+        async function downloadSingleArticle(idx, format) {
             const art = generatedArticlesData[idx];
-            const blob = new Blob([art.content], { type: "text/plain;charset=utf-8" });
+            const cleanTitle = art.title.replace(/[\\/:*?"<>|]/g, '_');
+
+            if (format === 'txt') {
+                const blob = new Blob([art.content], { type: "text/plain;charset=utf-8" });
+                triggerDownload(blob, `${cleanTitle}.txt`);
+            } else if (format === 'html') {
+                const fullHtml = generateStyledHtml(art.title, art.content, art.lang);
+                const blob = new Blob([fullHtml], { type: "text/html;charset=utf-8" });
+                triggerDownload(blob, `${cleanTitle}.html`);
+            } else if (format === 'pdf') {
+                await exportToPdf(art.title, art.content, art.lang, `${cleanTitle}.pdf`);
+            }
+        }
+
+        function triggerDownload(blob, filename) {
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `${art.title.replace(/[\\/:*?"<>|]/g, '_')}.txt`;
+            link.download = filename;
             link.click();
         }
 
-        // إعادة توليد مقال محدد
+        // تصدير PDF باستخدام html2pdf
+        async function exportToPdf(title, markdownContent, lang, filename) {
+            const container = document.getElementById('pdfRenderContainer');
+            container.classList.remove('hidden');
+            container.innerHTML = `<div style="padding: 20px;">${generateStyledHtml(title, markdownContent, lang)}</div>`;
+
+            const opt = {
+                margin:       10,
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            await html2pdf().set(opt).from(container).save();
+            container.innerHTML = "";
+            container.classList.add('hidden');
+        }
+
+        // إعادة كتابة مقال فردي
         async function regenerateSingleArticle(idx) {
             const apiKey = document.getElementById('apiKey').value.trim();
             const enableSearch = document.getElementById('enableGoogleSearch').checked;
+            const lang = document.getElementById('articleLang').value;
             let selectedModel = document.getElementById('modelSelect').value || "models/gemini-3.1-flash-lite";
             if (!selectedModel.startsWith('models/')) selectedModel = 'models/' + selectedModel;
 
             const art = generatedArticlesData[idx];
             const body = document.getElementById(`accBody_${idx}`);
-            body.innerText = "⏳ جاري إعادة التوليد عبر Google...";
+            body.innerText = "⏳ جاري إعادة التوليد والبحث في Google...";
 
             try {
-                const newContent = await generateSingleEEATArticle(art.title, apiKey, selectedModel, enableSearch);
+                let newContent = await generateSingleEEATArticle(art.title, apiKey, selectedModel, enableSearch, lang);
+                // إعادة حقن الروابط
+                if (cachedStoreUrls.length > 0) {
+                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
+                    const linksMapping = await getUniversalLinksMapping(endpoint, newContent, cachedStoreUrls.slice(0, 500));
+                    newContent = injectLinksIntoOriginalText(newContent, linksMapping, art.title, false);
+                }
                 art.content = newContent;
+                art.lang = lang;
                 body.innerText = newContent;
-                alert(`✅ تم تحديث وإعادة كتابة المقال: "${art.title}" بنجاح!`);
+                alert(`✅ تم تحديث المقال: "${art.title}" بنجاح!`);
             } catch (e) {
                 alert("❌ خطأ أثناء إعادة التوليد: " + e.message);
             }
         }
 
-        // إعادة توليد الكل
-        async function regenerateAllArticles() {
-            if (confirm("هل أنت متأكد من رغبتك في إعادة كتابة جميع المقالات المعروضة؟")) {
+        function regenerateAllArticles() {
+            if (confirm("هل تريد إعادة كتابة جميع المقالات المحددة؟")) {
                 startWritingSelectedArticles();
             }
         }
 
-        // تحميل جميع المقالات في ملف ZIP
-        async function downloadAllArticlesZip() {
+        // تحميل كل المقالات في ملف ZIP بأي صيغة (TXT أو HTML أو PDF)
+        async function downloadAllArticlesZip(format) {
             if (generatedArticlesData.length === 0) return;
             const zip = new JSZip();
-            generatedArticlesData.forEach(art => {
-                const filename = `${art.title.replace(/[\\/:*?"<>|]/g, '_')}.txt`;
-                zip.file(filename, art.content);
-            });
-            const blob = await zip.generateAsync({ type: "blob" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "eeat_comprehensive_articles.zip";
-            link.click();
+
+            if (format === 'txt') {
+                generatedArticlesData.forEach(art => {
+                    const fname = `${art.title.replace(/[\\/:*?"<>|]/g, '_')}.txt`;
+                    zip.file(fname, art.content);
+                });
+                const blob = await zip.generateAsync({ type: "blob" });
+                triggerDownload(blob, "eeat_articles_txt.zip");
+            } else if (format === 'html') {
+                generatedArticlesData.forEach(art => {
+                    const fname = `${art.title.replace(/[\\/:*?"<>|]/g, '_')}.html`;
+                    const fullHtml = generateStyledHtml(art.title, art.content, art.lang);
+                    zip.file(fname, fullHtml);
+                });
+                const blob = await zip.generateAsync({ type: "blob" });
+                triggerDownload(blob, "eeat_articles_html.zip");
+            } else if (format === 'pdf') {
+                alert("⏳ جاري تحويل المقالات إلى ملفات PDF وتجميعها، قد يستغرق ذلك ثوانٍ قليلة...");
+                const container = document.getElementById('pdfRenderContainer');
+                container.classList.remove('hidden');
+
+                for (let art of generatedArticlesData) {
+                    const fname = `${art.title.replace(/[\\/:*?"<>|]/g, '_')}.pdf`;
+                    container.innerHTML = `<div style="padding: 20px;">${generateStyledHtml(art.title, art.content, art.lang)}</div>`;
+                    const opt = {
+                        margin: 10,
+                        image: { type: 'jpeg', quality: 0.95 },
+                        html2canvas: { scale: 1.5, useCORS: true },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    const pdfBlob = await html2pdf().set(opt).from(container).outputPdf('blob');
+                    zip.file(fname, pdfBlob);
+                }
+
+                container.innerHTML = "";
+                container.classList.add('hidden');
+                const blob = await zip.generateAsync({ type: "blob" });
+                triggerDownload(blob, "eeat_articles_pdf.zip");
+            }
         }
 
         // ==========================================
-        // دوال التبويب الأول (حقن الروابط الأصلية)
+        // دوال التبويب الأول (حقن الروابط الأصلية المشتركة)
         // ==========================================
         document.getElementById('articleFiles').addEventListener('change', (e) => {
             const count = e.target.files.length;
@@ -613,12 +772,9 @@ ${sampleUrls}
             }).join('\n');
 
             const prompt = `أنت خبير محترف ومسؤول أول عن هندسة الروابط الداخلية لمواقع المتاجر الإلكترونية (E-Commerce On-Page SEO Architect).
-
-المهمة الأساسية:
-فحص نص المقال بدقة واستخراج **3 روابط مختلفة** لثلاثة منتجات، موديلات، تصنيفات، أو أقسام مختلفة مذكورة في المقال ولها صفحات مقابلة في المتجر.
-
-قواعد تنفيذية:
-1. استخرج 3 روابط مختلفة دون الاكتفاء برابط واحد طالما توفرت منتجات متعددة.
+افحص نص المقال واستخرج 3 روابط مختلفة لمنتجات أو تصنيفات مذكورة في المقال ولها صفحات مقابلة في المتجر.
+القواعد:
+1. استخرج 3 روابط مختلفة دون الاكتفاء برابط واحد طالما توفرت خيارات متعددة.
 2. طول نص الرابط من كلمتين إلى 5 كلمات، وتجنب الكلمات المنفردة.
 3. انسخ العبارة من نص المقال الأصلي حرفياً في exact_text.
 
@@ -661,14 +817,16 @@ ${articleText}`;
             return new RegExp(clean, 'i');
         }
 
-        function injectLinksIntoOriginalText(originalText, linksArray, fileName) {
+        function injectLinksIntoOriginalText(originalText, linksArray, fileName, showReport = true) {
             let resultText = originalText;
             const reportList = document.getElementById('injectedReport');
 
             if (!Array.isArray(linksArray) || linksArray.length === 0) {
-                const li = document.createElement('li');
-                li.innerText = `⚠️ ${fileName}: لم يقترح الذكاء الاصطناعي أي روابط.`;
-                reportList.appendChild(li);
+                if (showReport && reportList) {
+                    const li = document.createElement('li');
+                    li.innerText = `⚠️ ${fileName}: لم يقترح الذكاء الاصطناعي أي روابط.`;
+                    reportList.appendChild(li);
+                }
                 return originalText;
             }
 
@@ -688,9 +846,11 @@ ${articleText}`;
                     if (resultText.includes(phrase) && !resultText.includes(`[${phrase}]`)) {
                         resultText = resultText.replace(phrase, `[${phrase}](${link})`);
                         injectedCount++;
-                        const li = document.createElement('li');
-                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${phrase}"</i> 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
-                        reportList.appendChild(li);
+                        if (showReport && reportList) {
+                            const li = document.createElement('li');
+                            li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${phrase}"</i> 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
+                            reportList.appendChild(li);
+                        }
                         continue;
                     }
 
@@ -700,9 +860,11 @@ ${articleText}`;
                         const originalWord = match[0];
                         resultText = resultText.replace(originalWord, `[${originalWord}](${link})`);
                         injectedCount++;
-                        const li = document.createElement('li');
-                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${originalWord}"</i> 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
-                        reportList.appendChild(li);
+                        if (showReport && reportList) {
+                            const li = document.createElement('li');
+                            li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${originalWord}"</i> 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
+                            reportList.appendChild(li);
+                        }
                     }
                 }
             }
@@ -760,7 +922,7 @@ ${articleText}`;
                     statusText.innerText = `🔍 فحص وحقن المقال (${currentNum} من ${totalFiles}): ${file.name}`;
                     const originalText = await file.text();
                     const linksMapping = await getUniversalLinksMapping(geminiEndpoint, originalText, selectedUrls);
-                    const updatedContent = injectLinksIntoOriginalText(originalText, linksMapping, file.name);
+                    const updatedContent = injectLinksIntoOriginalText(originalText, linksMapping, file.name, true);
                     zip.file(file.name, updatedContent);
 
                     const pct = Math.round((currentNum / totalFiles) * 100);
@@ -784,10 +946,7 @@ ${articleText}`;
         async function downloadZipLinker() {
             if (!processedZipLinker) return;
             const content = await processedZipLinker.generateAsync({ type: "blob" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(content);
-            link.download = "internal_linked_articles.zip";
-            link.click();
+            triggerDownload(content, "internal_linked_articles.zip");
         }
     </script>
 </body>
