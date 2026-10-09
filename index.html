@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حاقن الروابط الذكي (سعة 500 رابط)</title>
+    <title>حاقن الروابط الذكي (المطابق العربي المتقدم)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط الداخلية الذكي (SEO)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">سعة استيعاب حتى <span class="font-bold text-blue-600">500 رابط</span> مع إعطاء أولوية مطلقة لموضوع المقال</p>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط الداخلية الذكي (Arabic Normalizer)</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">مطابقة مرنة للهمزات والحروف العربية وسعة استيعاب 500 رابط</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
@@ -63,7 +63,7 @@
 
             <!-- سجل مباشر للروابط المحقونة -->
             <div class="mt-4 bg-gray-50 border p-3 rounded text-xs max-h-48 overflow-y-auto">
-                <p class="font-bold text-gray-700 mb-1">📋 تقرير الروابط المحقونة:</p>
+                <p class="font-bold text-gray-700 mb-1">📋 تقرير المعالجة المباشر:</p>
                 <ul id="injectedReport" class="space-y-1 text-gray-600"></ul>
             </div>
         </div>
@@ -182,7 +182,6 @@
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
         async function getLinksMapping(modelEndpoint, articleText, urls) {
-            // فك التشفير عن الروابط لتكون واضحة ومقروءة للموديل بالعربي
             const readableUrls = urls.map(u => {
                 try {
                     return `${decodeURI(u)} ===> (${u})`;
@@ -194,16 +193,16 @@
             const prompt = `أنت خبير محترف في تحسين محركات البحث وبناء الروابط الداخلية (On-Page SEO).
 
 المهمة الأساسية:
-افحص المقال المرفق واختر من (1 إلى 3 روابط) من قائمة الروابط المرفقة لربطها بالكلمات الأكثر ملائمة داخل المقال.
+افحص المقال المرفق واختر من (1 إلى 3 روابط) من قائمة روابط المتجر، وحدد الكلمات المطابقة لها داخل المقال.
 
-قواعد هامة جداً:
-1. **الأولوية القصوى لموضوع المقال:** إذا كان المقال يتحدث عن منتج أو تصنيف متوفر في الروابط (مثل موضوع رئيسي كالعود، العطور، إلخ)، فيجب حتماً اختياره وربطه.
-2. **مطابقة حرفية صارمة:** الكلمات المختارة في "exact_text" يجب أن تكون موجودة ومكتوبة بالفعل حرفياً داخل المقال دون تغيير أو اختراع جمل جديدة.
-3. **طول نص الرابط:** يفضل أن يتكون الـ Anchor Text من (2 إلى 4 كلمات) مثل: "العود المروكي الطبيعي" أو "أفضل أنواع العود". تجنب الكلمات الفردية المعزولة ما لم تكن هي اسم المنتج الصريح.
-4. أرجع النتيجة حصراً بصيغة JSON Array بدون أي مقدمات أو علامات إضافية:
+تعليمات دقيقة جداً:
+1. **الأولوية المطلقة:** إذا كان المقال يتحدث عن منتج أو تصنيف متوفر في الروابط (مثل العود المروكي، العطور، إلخ)، يجب حتماً ربطه.
+2. **النسخ الحرفي للأصل:** انسخ الكلمات كما هي مكتوبة في المقال تماماً وبنفس رسم الحروف والهمزات بدون أي تصحيح لغوي من عندك.
+3. **طول نص الرابط:** اختر عبارة واضحة من (2 إلى 4 كلمات) مثل: "العود المروكي" أو "خشب العود المروكي الطبيعي".
+4. أرجع النتيجة حصراً بصيغة JSON Array بدون أي كلام إضافي:
 [
   {
-    "exact_text": "الكلمات الحرفية المنسوخة من المقال",
+    "exact_text": "الكلمات المنسوخة حرفياً من نص المقال",
     "url": "الرابط المطابق"
   }
 ]
@@ -236,12 +235,28 @@ ${articleText}`;
             }
         }
 
+        // دالة إنشاء تعبير نمطي يتجاوز فروقات الإملاء والهمزات العربية
+        function buildArabicFuzzyRegex(phrase) {
+            let clean = phrase
+                .replace(/[\u064B-\u065F\u0670\u0640]/g, '') // إزالة التشكيل والتطويل
+                .replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // حماية الرموز الخاصة
+
+            clean = clean
+                .replace(/[اأإآ]/g, '[اأإآ]')
+                .replace(/[هة]/g, '[هة]')
+                .replace(/[يى]/g, '[يى]')
+                .replace(/\s+/g, '\\s+'); // مطابقة أي نوع من المسافات أو الأسطر
+
+            return new RegExp(clean, 'i');
+        }
+
         function injectLinksIntoOriginalText(originalText, linksArray, fileName) {
             let resultText = originalText;
             const reportList = document.getElementById('injectedReport');
+
             if (!Array.isArray(linksArray) || linksArray.length === 0) {
                 const li = document.createElement('li');
-                li.innerText = `⚠️ ${fileName}: لم يتم العثور على سياق متطابق.`;
+                li.innerText = `⚠️ ${fileName}: لم يجد الذكاء الاصطناعي روابط مطابقة للموضوع.`;
                 reportList.appendChild(li);
                 return originalText;
             }
@@ -258,9 +273,10 @@ ${articleText}`;
                 }
 
                 if (phrase && link) {
-                    // تنظيف الفواصل من نهاية الكلمة إن وجدت لتفادي مشاكل المطابقة
-                    phrase = phrase.replace(/[،,.:؛]+$/, '').trim();
+                    // تنظيف أي علامات ترقيم زائدة في البداية والنهاية
+                    phrase = phrase.replace(/^[«"'\s]+|[»"'\s.,:;،؟!-]+$/g, '').trim();
 
+                    // 1. محاولة المطابقة المباشرة أولاً
                     if (resultText.includes(phrase) && !resultText.includes(`[${phrase}]`)) {
                         resultText = resultText.replace(phrase, `[${phrase}](${link})`);
                         injectedCount++;
@@ -268,13 +284,29 @@ ${articleText}`;
                         const li = document.createElement('li');
                         li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${phrase}"</i>`;
                         reportList.appendChild(li);
+                        continue;
+                    }
+
+                    // 2. إذا فشلت، نستخدم المطابق العربي المرن (يتجاوز الهمزات والتاء المربوطة)
+                    const fuzzyRegex = buildArabicFuzzyRegex(phrase);
+                    const match = resultText.match(fuzzyRegex);
+
+                    if (match && match[0] && !resultText.includes(`[${match[0]}]`)) {
+                        const originalWordInDoc = match[0];
+                        resultText = resultText.replace(originalWordInDoc, `[${originalWordInDoc}](${link})`);
+                        injectedCount++;
+
+                        const li = document.createElement('li');
+                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${originalWordInDoc}"</i> (مطابقة ذكية)`;
+                        reportList.appendChild(li);
                     }
                 }
             }
 
             if (injectedCount === 0) {
+                const suggestedPhrases = items.map(i => i.exact_text).filter(Boolean).join(' ، ');
                 const li = document.createElement('li');
-                li.innerText = `⚠️ ${fileName}: تم اقتراح روابط لكن تعذرت مطابقة النص الحرفي.`;
+                li.innerHTML = `⚠️ <b>${fileName}</b>: اقترح المودل الكلمات: [${suggestedPhrases}] ولكن لم نجدها في النص.`;
                 reportList.appendChild(li);
             }
 
@@ -327,9 +359,7 @@ ${articleText}`;
 
                 if (allUrls.length === 0) throw new Error("تعذر سحب أي روابط من خريطة الموقع.");
 
-                // تم رفع سعة الروابط إلى 500 رابط هنا 👈
                 const selectedUrls = allUrls.slice(0, 500);
-
                 const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
 
                 const zip = new JSZip();
@@ -340,7 +370,7 @@ ${articleText}`;
                     const currentNum = i + 1;
                     
                     statusText.innerText = `🔍 فحص المقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `جاري مطابقة الروابط من بين ${selectedUrls.length} صفحة متاحة...`;
+                    logMessage.innerText = `جاري مطابقة الروابط عبر الذكاء الاصطناعي والمطابق العربي...`;
 
                     const originalText = await file.text();
                     const linksMapping = await getLinksMapping(geminiEndpoint, originalText, selectedUrls);
@@ -357,7 +387,7 @@ ${articleText}`;
 
                 processedZip = zip;
                 statusText.innerText = "✅ تم الانتهاء بنجاح!";
-                logMessage.innerText = `تم فحص جميع المقالات بناءً على ${selectedUrls.length} رابط متجر.`;
+                logMessage.innerText = `تم فحص جميع المقالات ومعالجة مطابقة الحروف العربية.`;
                 downloadContainer.classList.remove('hidden');
 
             } catch (err) {
