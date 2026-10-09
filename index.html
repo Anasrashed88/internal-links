@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حاقن الروابط الذكي (المطابق العربي المتقدم)</title>
+    <title>حاقن الروابط الذكي (Long-Tail SEO Linker)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط الداخلية الذكي (Arabic Normalizer)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">مطابقة مرنة للهمزات والحروف العربية وسعة استيعاب 500 رابط</p>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط بالكلمات المفتاحية الطويلة (Long-Tail)</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">حقن حصري على عبارات من <span class="font-bold text-blue-600">3 كلمات فأكثر</span> لتعزيز الـ SEO الطبيعي وزيادة المبيعات</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
@@ -36,6 +36,7 @@
             <div>
                 <label class="block text-sm font-semibold mb-1">🗺️ روابط خرائط الموقع (Sitemaps):</label>
                 <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة المنتجات أو الأقسام هنا:&#10;https://example.com/sitemap_products_1.xml" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
+                <span class="text-xs text-gray-500">💡 يفضل استخدام خريطة المنتجات والتصنيفات مباشرة.</span>
             </div>
 
             <!-- 4. رفع الملفات -->
@@ -46,7 +47,7 @@
             </div>
 
             <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 ابدأ فحص وحقن الروابط
+                🚀 ابدأ فحص وحقن الكلمات الطويلة
             </button>
         </div>
 
@@ -63,14 +64,14 @@
 
             <!-- سجل مباشر للروابط المحقونة -->
             <div class="mt-4 bg-gray-50 border p-3 rounded text-xs max-h-48 overflow-y-auto">
-                <p class="font-bold text-gray-700 mb-1">📋 تقرير المعالجة المباشر:</p>
+                <p class="font-bold text-gray-700 mb-1">📋 تقرير الكلمات المفتاحية المحقونة (3 كلمات فأكثر):</p>
                 <ul id="injectedReport" class="space-y-1 text-gray-600"></ul>
             </div>
         </div>
 
         <!-- صندوق التنزيل -->
         <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
-            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء بنجاح وحقن المقالات بدقة!</h3>
+            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء بنجاح وحقن الروابط بالكلمات المفتاحية الطويلة!</h3>
             <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
                 📥 تحميل المقالات المعالجة (ZIP)
             </button>
@@ -172,16 +173,42 @@
             }
 
             if (urls.length === 0 && subSitemaps.length > 0) {
-                const targetSub = subSitemaps.find(s => s.includes('product') || s.includes('category')) || subSitemaps[0];
-                return await extractUrlsFromSitemap(targetSub);
+                let allSubUrls = [];
+                const prioritySubs = subSitemaps.filter(s => s.includes('product') || s.includes('categor') || s.includes('collection'));
+                const targets = prioritySubs.length > 0 ? prioritySubs : subSitemaps;
+
+                for (let sub of targets) {
+                    const res = await extractUrlsFromSitemap(sub);
+                    allSubUrls = allSubUrls.concat(res);
+                }
+                return allSubUrls;
             }
 
             return urls;
         }
 
+        function sortAndPrioritizeUrls(urls) {
+            let products = [];
+            let categories = [];
+            let others = [];
+
+            for (let u of urls) {
+                const lower = u.toLowerCase();
+                if (lower.includes('/product') || lower.includes('/p/')) {
+                    products.push(u);
+                } else if (lower.includes('/categor') || lower.includes('/collection') || lower.includes('/c/')) {
+                    categories.push(u);
+                } else if (!lower.includes('/blog') && !lower.includes('/post') && !lower.includes('/article')) {
+                    others.push(u);
+                }
+            }
+
+            return [...products, ...categories, ...others];
+        }
+
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        async function getLinksMapping(modelEndpoint, articleText, urls) {
+        async function getCommercialLinksMapping(modelEndpoint, articleText, urls) {
             const readableUrls = urls.map(u => {
                 try {
                     return `${decodeURI(u)} ===> (${u})`;
@@ -190,24 +217,27 @@
                 }
             }).join('\n');
 
-            const prompt = `أنت خبير محترف في تحسين محركات البحث وبناء الروابط الداخلية (On-Page SEO).
+            const prompt = `أنت خبير محترف في الـ On-Page SEO واستراتيجيات الكلمات المفتاحية طويلة الذيل (Long-Tail Keywords).
 
-المهمة الأساسية:
-افحص المقال المرفق واختر من (1 إلى 3 روابط) من قائمة روابط المتجر، وحدد الكلمات المطابقة لها داخل المقال.
+الهدف:
+اختر من (1 إلى 3 روابط) من قائمة المنتجات والأقسام، وحدد الكلمات المفتاحية المطابقة داخل المقال.
 
-تعليمات دقيقة جداً:
-1. **الأولوية المطلقة:** إذا كان المقال يتحدث عن منتج أو تصنيف متوفر في الروابط (مثل العود المروكي، العطور، إلخ)، يجب حتماً ربطه.
-2. **النسخ الحرفي للأصل:** انسخ الكلمات كما هي مكتوبة في المقال تماماً وبنفس رسم الحروف والهمزات بدون أي تصحيح لغوي من عندك.
-3. **طول نص الرابط:** اختر عبارة واضحة من (2 إلى 4 كلمات) مثل: "العود المروكي" أو "خشب العود المروكي الطبيعي".
-4. أرجع النتيجة حصراً بصيغة JSON Array بدون أي كلام إضافي:
+⚠️ شرط إجباري وحاسم لطول نص الرابط (Long-Tail Rule):
+1. **الحد الأدنى 3 كلمات:** يجب أن يتكون نص الرابط (exact_text) من **3 كلمات على الأقل** (من 3 إلى 6 كلمات).
+   - ❌ ممنوع منعاً باتاً: كلمة واحدة أو كلمتان مثل: "العود المروكي" أو "العود المحسن".
+   - ✔️ المقبول والصحيح فقط: عبارة كاملة مثل: "أفضل أنواع العود المروكي" أو "خشب العود المروكي الطبيعي" أو "استخدام العود المروكي المحسن".
+2. **الأولوية التجارية:** صفحات المنتجات والتصنيفات لها الأولوية القصوى لزيادة المبيعات.
+3. **المطابقة الحرفية:** العبارة المختارة في exact_text يجب أن تكون منسوخة حرفياً كما هي في المقال الأصلي.
+
+أرجع النتيجة حصراً بصيغة JSON Array بدون أي مقدمات:
 [
   {
-    "exact_text": "الكلمات المنسوخة حرفياً من نص المقال",
-    "url": "الرابط المطابق"
+    "exact_text": "عبارة طويلة من 3 كلمات فأكثر منسوخة حرفياً",
+    "url": "رابط المنتج أو التصنيف المطابق"
   }
 ]
 
-قائمة الروابط المتاحة:
+قائمة الروابط:
 ${readableUrls}
 
 نص المقال:
@@ -235,17 +265,16 @@ ${articleText}`;
             }
         }
 
-        // دالة إنشاء تعبير نمطي يتجاوز فروقات الإملاء والهمزات العربية
         function buildArabicFuzzyRegex(phrase) {
             let clean = phrase
-                .replace(/[\u064B-\u065F\u0670\u0640]/g, '') // إزالة التشكيل والتطويل
-                .replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // حماية الرموز الخاصة
+                .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
+                .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
             clean = clean
                 .replace(/[اأإآ]/g, '[اأإآ]')
                 .replace(/[هة]/g, '[هة]')
                 .replace(/[يى]/g, '[يى]')
-                .replace(/\s+/g, '\\s+'); // مطابقة أي نوع من المسافات أو الأسطر
+                .replace(/\s+/g, '\\s+');
 
             return new RegExp(clean, 'i');
         }
@@ -256,7 +285,7 @@ ${articleText}`;
 
             if (!Array.isArray(linksArray) || linksArray.length === 0) {
                 const li = document.createElement('li');
-                li.innerText = `⚠️ ${fileName}: لم يجد الذكاء الاصطناعي روابط مطابقة للموضوع.`;
+                li.innerText = `⚠️ ${fileName}: لم يتم العثور على عبارات طويلة مناسبة.`;
                 reportList.appendChild(li);
                 return originalText;
             }
@@ -273,21 +302,29 @@ ${articleText}`;
                 }
 
                 if (phrase && link) {
-                    // تنظيف أي علامات ترقيم زائدة في البداية والنهاية
                     phrase = phrase.replace(/^[«"'\s]+|[»"'\s.,:;،؟!-]+$/g, '').trim();
 
-                    // 1. محاولة المطابقة المباشرة أولاً
+                    // 🛑 صمام الأمان البرمجي: التأكد من أن العبارة تحتوي على 3 كلمات على الأقل
+                    const wordCount = phrase.split(/\s+/).filter(Boolean).length;
+                    if (wordCount < 3) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `⚠️ <b>${fileName}</b>: تم تجاهل العبارة <i>"${phrase}"</i> لأنها قصيرة (${wordCount} كلمات فقط). المطلوب 3 فأكثر.`;
+                        reportList.appendChild(li);
+                        continue;
+                    }
+
+                    // 1. محاولة المطابقة المباشرة
                     if (resultText.includes(phrase) && !resultText.includes(`[${phrase}]`)) {
                         resultText = resultText.replace(phrase, `[${phrase}](${link})`);
                         injectedCount++;
 
                         const li = document.createElement('li');
-                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${phrase}"</i>`;
+                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${phrase}"</i> (${wordCount} كلمات) 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
                         reportList.appendChild(li);
                         continue;
                     }
 
-                    // 2. إذا فشلت، نستخدم المطابق العربي المرن (يتجاوز الهمزات والتاء المربوطة)
+                    // 2. المطابقة المرنة للحروف العربية
                     const fuzzyRegex = buildArabicFuzzyRegex(phrase);
                     const match = resultText.match(fuzzyRegex);
 
@@ -297,16 +334,15 @@ ${articleText}`;
                         injectedCount++;
 
                         const li = document.createElement('li');
-                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${originalWordInDoc}"</i> (مطابقة ذكية)`;
+                        li.innerHTML = `✅ <b>${fileName}</b>: تم ربط <i>"${originalWordInDoc}"</i> (${wordCount} كلمات - مطابقة ذكية) 👈 <a href="${link}" target="_blank" class="text-blue-600 underline">${decodeURI(link)}</a>`;
                         reportList.appendChild(li);
                     }
                 }
             }
 
             if (injectedCount === 0) {
-                const suggestedPhrases = items.map(i => i.exact_text).filter(Boolean).join(' ، ');
                 const li = document.createElement('li');
-                li.innerHTML = `⚠️ <b>${fileName}</b>: اقترح المودل الكلمات: [${suggestedPhrases}] ولكن لم نجدها في النص.`;
+                li.innerText = `⚠️ ${fileName}: لم يتم حقن أي رابط (لم تتطابق الشروط أو الكلمات المقترحة).`;
                 reportList.appendChild(li);
             }
 
@@ -345,7 +381,7 @@ ${articleText}`;
             
             progressBar.style.width = '0%';
             progressPercent.innerText = '0%';
-            statusText.innerText = "⏳ جاري استخراج روابط المتجر من الـ Sitemap...";
+            statusText.innerText = "⏳ جاري استخراج صفحات المنتجات والتصنيفات من الـ Sitemap...";
             logMessage.innerText = "";
 
             try {
@@ -359,7 +395,9 @@ ${articleText}`;
 
                 if (allUrls.length === 0) throw new Error("تعذر سحب أي روابط من خريطة الموقع.");
 
-                const selectedUrls = allUrls.slice(0, 500);
+                const sortedUrls = sortAndPrioritizeUrls(allUrls);
+                const selectedUrls = sortedUrls.slice(0, 500);
+
                 const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`;
 
                 const zip = new JSZip();
@@ -369,11 +407,11 @@ ${articleText}`;
                     const file = files[i];
                     const currentNum = i + 1;
                     
-                    statusText.innerText = `🔍 فحص المقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `جاري مطابقة الروابط عبر الذكاء الاصطناعي والمطابق العربي...`;
+                    statusText.innerText = `🔍 فحص العبارات الطويلة للمقال (${currentNum} من ${totalFiles}): ${file.name}`;
+                    logMessage.innerText = `جاري تحديد عبارات مفتاحية من 3 كلمات فأكثر...`;
 
                     const originalText = await file.text();
-                    const linksMapping = await getLinksMapping(geminiEndpoint, originalText, selectedUrls);
+                    const linksMapping = await getCommercialLinksMapping(geminiEndpoint, originalText, selectedUrls);
                     const updatedContent = injectLinksIntoOriginalText(originalText, linksMapping, file.name);
                     
                     zip.file(file.name, updatedContent);
@@ -387,7 +425,7 @@ ${articleText}`;
 
                 processedZip = zip;
                 statusText.innerText = "✅ تم الانتهاء بنجاح!";
-                logMessage.innerText = `تم فحص جميع المقالات ومعالجة مطابقة الحروف العربية.`;
+                logMessage.innerText = `تم حقن المقالات بكلمات مفتاحية طويلة الذيل حصراً (3 كلمات فأكثر).`;
                 downloadContainer.classList.remove('hidden');
 
             } catch (err) {
@@ -403,7 +441,7 @@ ${articleText}`;
             const content = await processedZip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(content);
-            link.download = "seo_linked_articles.zip";
+            link.download = "longtail_seo_articles.zip";
             link.click();
         }
     </script>
