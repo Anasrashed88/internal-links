@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حاقن الروابط الداخلي الذكي</title>
+    <title>حاقن الروابط الشامل للمتاجر الإلكترونية (Universal SEO Linker)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4 md:p-8">
     <div class="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-md">
-        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🎯 حاقن الروابط الداخلية الذكي (إصدار الدقة والمرونة)</h1>
-        <p class="text-sm text-gray-500 text-center mb-6">مطابقة دلالية مرنة (من كلمتين إلى 5 كلمات) متوافقة 100% مع منصات زد وسلة وووردبريس</p>
+        <h1 class="text-2xl font-bold mb-2 text-center text-blue-700">🌐 حاقن الروابط الشامل لمختلف المتاجر الإلكترونية</h1>
+        <p class="text-sm text-gray-500 text-center mb-6">متوافق مع جميع المجالات والقطاعات التجارية (تقنية، أزياء، عطور، عناية، أغذية...)</p>
 
         <div class="space-y-4">
             <!-- 1. مفتاح الـ API -->
@@ -35,7 +35,7 @@
             <!-- 3. روابط الخرائط -->
             <div>
                 <label class="block text-sm font-semibold mb-1">🗺️ روابط خرائط الموقع (Sitemaps):</label>
-                <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة الموقع هنا (مثال: https://midhal-oud.store/sitemap.xml)" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
+                <textarea id="sitemapUrls" rows="3" placeholder="ضع رابط خريطة موقع أي متجر هنا (مثال: https://examplestore.com/sitemap.xml)" class="w-full border p-2 rounded focus:outline-blue-500 font-mono text-sm"></textarea>
             </div>
 
             <!-- 4. رفع الملفات -->
@@ -46,7 +46,7 @@
             </div>
 
             <button onclick="startBatchProcessing()" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                🚀 ابدأ فحص وحقن الروابط الآن
+                🚀 ابدأ فحص وحقن الروابط الداخلية
             </button>
         </div>
 
@@ -63,14 +63,14 @@
 
             <!-- تقرير حي ومفصل لكل مقال -->
             <div class="mt-4 bg-gray-50 border p-3 rounded text-xs max-h-60 overflow-y-auto">
-                <p class="font-bold text-gray-700 mb-1">📋 تقرير المعالجة المباشر:</p>
+                <p class="font-bold text-gray-700 mb-1">📋 تقرير المنتجات والتصنيفات المحقونة:</p>
                 <ul id="injectedReport" class="space-y-1 text-gray-600"></ul>
             </div>
         </div>
 
         <!-- صندوق التنزيل -->
         <div id="downloadContainer" class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg text-center hidden">
-            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء بنجاح وحقن الروابط!</h3>
+            <h3 class="text-green-800 font-bold mb-2">🎉 تم الانتهاء بنجاح وحقن جميع المقالات!</h3>
             <button onclick="downloadZip()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded-lg text-sm transition">
                 📥 تحميل المقالات المعالجة (ZIP)
             </button>
@@ -154,7 +154,6 @@
             return null;
         }
 
-        // سحب كامل روابط المتجر دون استثناء
         async function extractUrlsFromSitemap(sitemapUrl) {
             const xmlText = await fetchXmlWithProxy(sitemapUrl);
             if (!xmlText) return [];
@@ -172,7 +171,6 @@
                 else urls.push(link);
             }
 
-            // إذا كانت خريطة رئيسية، نقرأ جميع الخرائط الفرعية كاملة
             if (urls.length === 0 && subSitemaps.length > 0) {
                 let allSubUrls = [];
                 for (let sub of subSitemaps) {
@@ -187,7 +185,8 @@
 
         const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-        async function getSemanticLinksMapping(modelEndpoint, articleText, urls) {
+        // محرك التحليل الشامل لجميع مجالات التجارة الإلكترونية
+        async function getUniversalLinksMapping(modelEndpoint, articleText, urls) {
             const readableUrls = urls.map(u => {
                 try {
                     const decoded = decodeURI(u);
@@ -198,26 +197,34 @@
                 }
             }).join('\n');
 
-            const prompt = `أنت خبير محترف في هندسة الروابط الداخلية لمواقع التجارة الإلكترونية (Internal SEO).
+            const prompt = `أنت خبير محترف ومسؤول أول عن هندسة الروابط الداخلية لمواقع المتاجر الإلكترونية (E-Commerce On-Page SEO Architect).
 
-المهمة:
-اختر من (1 إلى 3 روابط) من قائمة روابط المتجر المرفقة والتي ترتبط ارتباطاً وثيقاً بموضوع ومحتوى المقال، وحدد العبارات المطابقة لها من المقال.
+المهمة الأساسية:
+فحص نص المقال بدقة واستخراج **3 روابط مختلفة** لثلاثة منتجات، موديلات، تصنيفات، أو أقسام مختلفة مذكورة في المقال ولها صفحات مقابلة في المتجر.
 
-قواعد هامة ومرنة:
-1. **طول نص الرابط (من كلمتين إلى 5 كلمات):**
-   - اختر عبارة طبيعية وسياقية من (2 إلى 5 كلمات).
-   - ✔️ أمثلة مقبولة جداً: "العود المروكي"، "المروكي المحسن"، "خشب العود المروكي"، "أفضل أنواع العود المروكي".
-   - ❌ ممنوع الكلمة الواحدة المعزولة مثل ("عود" فقط أو "هنا").
-2. **مطابقة تامة للنص الأصلي:**
-   - انسخ العبارة في "exact_text" كما هي موجودة تماماً في نص المقال دون أي تحريف.
-3. **أولوية المنتجات:**
-   - يفضل دائماً توجيه القارئ لصفحات المنتجات والتصنيفات بدلاً من المقالات العامة متى ما توفرت.
+قواعد تنفيذية شاملة ومحايدة (Universal E-Commerce Linking):
+1. **تغطية التنوع في المقال (Multi-Item Discovery):**
+   - افحص المقال جيداً: الكاتب في أي مجال تجاري يذكر أصنافاً، أو أنواعاً، أو موديلات، أو استخدامات، أو فئات متعددة.
+   - مهمتك هي مطابقة كل منتج أو تصنيف أو ميزة مذكورة برابطها المباشر في المتجر لتغطية **3 روابط مختلفة** ولا تكتفِ برابط واحد إطلاقاً إذا وُجدت خيارات متعددة.
+2. **طول نص الرابط (من كلمتين إلى 5 كلمات):**
+   - اختر عبارة سياقية واضحة تعبر عن المنتج أو الفئة (من 2 إلى 5 كلمات).
+   - ❌ ممنوع تماماً الكلمات الفردية المعزولة أو الكلمات العامة (مثل "هنا" أو "شاهد").
+3. **أمانة النسخ من النص:**
+   - انسخ العبارة في "exact_text" كما هي موجودة تماماً في نص المقال الأصلي دون أي تعديل لغوي أو زيادة أو نقصان.
 
-أرجع النتيجة حصراً بصيغة JSON Array بدون أي شرح أو كلام إضافي:
+المطلوب: إرجاع مصفوفة JSON تحتوي على **3 عناصر مختلفة** (أو أقصى عدد ممكن يتيحه محتوى المقال):
 [
   {
-    "exact_text": "العبارة المنسوخة من المقال (كلمتان فأكثر)",
-    "url": "رابط الصفحة المطابقة"
+    "exact_text": "العبارة الأولى المنسوخة من المقال للعنصر الأول",
+    "url": "رابط الصفحة الأولى في المتجر"
+  },
+  {
+    "exact_text": "العبارة الثانية المنسوخة من المقال للعنصر الثاني",
+    "url": "رابط الصفحة الثانية في المتجر"
+  },
+  {
+    "exact_text": "العبارة الثالثة المنسوخة من المقال للعنصر الثالث",
+    "url": "رابط الصفحة الثالثة في المتجر"
   }
 ]
 
@@ -232,7 +239,7 @@ ${articleText}`;
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { temperature: 0.2 }
+                    generationConfig: { temperature: 0.3 }
                 })
             });
 
@@ -269,7 +276,7 @@ ${articleText}`;
 
             if (!Array.isArray(linksArray) || linksArray.length === 0) {
                 const li = document.createElement('li');
-                li.innerText = `⚠️ ${fileName}: لم يقترح الذكاء الاصطناعي أي روابط مطابقة.`;
+                li.innerText = `⚠️ ${fileName}: لم يجد الذكاء الاصطناعي روابط مطابقة لسياق المقال.`;
                 reportList.appendChild(li);
                 return originalText;
             }
@@ -288,7 +295,6 @@ ${articleText}`;
                 if (phrase && link) {
                     phrase = phrase.replace(/^[«"'\s]+|[»"'\s.,:;،؟!-]+$/g, '').trim();
 
-                    // السماح بالعبارات المكونة من كلمتين فأكثر
                     const wordCount = phrase.split(/\s+/).filter(Boolean).length;
                     if (wordCount < 2) continue;
 
@@ -303,7 +309,7 @@ ${articleText}`;
                         continue;
                     }
 
-                    // 2. المطابقة المرنة (الهمزات والحروف)
+                    // 2. المطابقة المرنة
                     const fuzzyRegex = buildArabicFuzzyRegex(phrase);
                     const match = resultText.match(fuzzyRegex);
 
@@ -375,11 +381,10 @@ ${articleText}`;
 
                 if (allUrls.length === 0) throw new Error("تعذر سحب أي روابط من خريطة الموقع. تأكد أن الرابط يعمل بشكل صحيح.");
 
-                // إرسال عينة حتى 500 رابط كاملة دون أي حذف
                 const selectedUrls = allUrls.slice(0, 500);
 
                 const countNotice = document.createElement('li');
-                countNotice.innerHTML = `📊 <b>تم استخراج (${allUrls.length}) رابط بنجاح من متجرك.</b> جاري فحص المقالات...`;
+                countNotice.innerHTML = `📊 <b>تم استخراج (${allUrls.length}) رابط بنجاح من متجرك.</b> جاري فحص ومطابقة المقالات...`;
                 countNotice.className = "text-blue-700 font-bold mb-2 pb-1 border-b";
                 reportList.appendChild(countNotice);
 
@@ -393,10 +398,10 @@ ${articleText}`;
                     const currentNum = i + 1;
                     
                     statusText.innerText = `🔍 فحص وحقن المقال (${currentNum} من ${totalFiles}): ${file.name}`;
-                    logMessage.innerText = `جاري التحليل والمطابقة...`;
+                    logMessage.innerText = `جاري مسح المنتجات والتصنيفات ومطابقتها سياقياً...`;
 
                     const originalText = await file.text();
-                    const linksMapping = await getSemanticLinksMapping(geminiEndpoint, originalText, selectedUrls);
+                    const linksMapping = await getUniversalLinksMapping(geminiEndpoint, originalText, selectedUrls);
                     const updatedContent = injectLinksIntoOriginalText(originalText, linksMapping, file.name);
                     
                     zip.file(file.name, updatedContent);
@@ -426,7 +431,7 @@ ${articleText}`;
             const content = await processedZip.generateAsync({ type: "blob" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(content);
-            link.download = "internal_linked_articles.zip";
+            link.download = "universal_seo_linked_articles.zip";
             link.click();
         }
     </script>
